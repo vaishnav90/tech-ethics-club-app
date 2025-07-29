@@ -152,6 +152,8 @@ static/uploads/
 # Large image files (exclude from git but keep locally)
 *.JPEG
 *.jpeg
+*.jpg
+*.png
 
 # IDE files
 .vscode/
