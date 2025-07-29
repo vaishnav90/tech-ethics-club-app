@@ -155,6 +155,11 @@ static/uploads/
 *.jpg
 *.png
 
+# Exclude static directory (contains large 3D models and images)
+static/
+!static/css/
+!static/css/style.css
+
 # IDE files
 .vscode/
 .idea/
