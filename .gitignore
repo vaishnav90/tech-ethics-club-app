@@ -149,6 +149,10 @@ static/uploads/
 # Large 3D model files (exclude from git but keep locally)
 *.glb
 
+# Large image files (exclude from git but keep locally)
+*.JPEG
+*.jpeg
+
 # IDE files
 .vscode/
 .idea/
