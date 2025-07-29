@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+        <!-- Grid Background -->
+        <div class="grid-background"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">DOCUMENT ID:</span>
+                        <span class="value">REG.001</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">GALLERY</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">OUR TEAM</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- Page Markers -->
+        <div class="page-marker left">REG.001</div>
+        <div class="page-marker right">1.0</div>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="auth-container">
+                <section class="section blueprint-section animate-in">
+                    <div class="section-header">
+                        <h2 class="section-title">USER REGISTRATION</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash-message {{ category }}">
+                                    <span class="flash-text">{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" class="auth-form">
+                        <div class="form-group">
+                            <label for="email" class="form-label">EMAIL ADDRESS:</label>
+                            <input type="email" id="email" name="email" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password" class="form-label">PASSWORD:</label>
+                            <input type="password" id="password" name="password" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm_password" class="form-label">CONFIRM PASSWORD:</label>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="auth-button">
+                                <span class="button-text">REGISTER</span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="auth-links">
+                        <p class="auth-text">
+                            Already have an account? 
+                            <a href="{{ url_for('login') }}" class="auth-link">Login here</a>
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">REG-1.0</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">SECURE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+        </footer>
+    </div>
+</body>
+</html> 

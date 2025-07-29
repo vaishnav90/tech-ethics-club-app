@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page gallery-page-container">
+        <!-- Grid Background -->
+        <div class="grid-background"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">PAGE:</span>
+                        <span class="value">GALLERY</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">3.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">GALLERY</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">OUR TEAM</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Markers -->
+        <div class="page-marker left">GALLERY</div>
+        <div class="page-marker right">3.0</div>
+
+        <!-- Main Content -->
+        <main class="content gallery-page">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">
+                                <span class="flash-text">{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Admin Controls -->
+            {% if current_user.is_authenticated and current_user.is_admin %}
+                <div class="admin-controls" style="margin-bottom: 30px; text-align: center;">
+                    <a href="{{ url_for('add_gallery_item') }}" class="admin-button" style="display: inline-block; text-decoration: none;">
+                        <span class="button-text">+ ADD NEW GALLERY ITEM</span>
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Gallery Grid -->
+            <div class="gallery-container">
+                {% if gallery_items %}
+                    {% for item in gallery_items %}
+                        <div class="gallery-item">
+                            <div class="gallery-image">
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                            </div>
+                            <div class="gallery-description">
+                                <h3 class="gallery-title">{{ item.title }}</h3>
+                                {% if item.creator_name %}
+                                    <div class="creator-info">
+                                        <span class="creator-label">By:</span>
+                                        <span class="creator-name">{{ item.creator_name }}</span>
+                                    </div>
+                                {% endif %}
+                                <p class="blueprint-text">{{ item.description }}</p>
+                                {% if item.project_link %}
+                                    <div class="project-link-container">
+                                        <a href="{{ item.project_link }}" target="_blank" class="project-link">
+                                            <span class="link-text">VIEW PROJECT</span>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                                {% if current_user.is_authenticated and current_user.is_admin %}
+                                    <div class="admin-controls">
+                                        <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form">
+                                            <button type="submit" class="delete-button" onclick="return confirm('Are you sure you want to delete this item?')">
+                                                <span class="button-text">DELETE</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-gallery">
+                        <p class="blueprint-text">No gallery items yet. {% if current_user.is_authenticated and current_user.is_admin %}Add some items to get started!{% endif %}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">BETA-3.0</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">OPERATIONAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simple animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add animation class to gallery items
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            galleryItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('animate-in');
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html> 

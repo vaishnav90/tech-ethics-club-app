@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div class="page">
+        <!-- Grid Background -->
+        <div class="grid-background"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title" id="typewriter-title">TECH & ETHICS CLUB </h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">DOCUMENT ID:</span>
+                        <span class="value">FTL.001</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.5</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">GALLERY</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">OUR TEAM</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Markers -->
+        <div class="page-marker left">FTL.001</div>
+        <div class="page-marker right">1.5</div>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Left Column -->
+            <div class="column left-column">
+                <!-- 3D Robot Playground Section -->
+                <section class="section blueprint-section model-section">
+                    <div class="section-header">
+                        <h2 class="section-title"></h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="model-container">
+                        <div id="robot-viewer" class="robot-viewer"></div>
+                        <!--<div class="model-controls">
+                            <div class="control-info">
+                                <span class="control-label">CONTROLS:</span>
+                                <span class="control-text">Mouse drag to rotate • Scroll to zoom • Right-click to pan</span>
+                            </div>
+                        </div> -->
+                    </div>
+                </section>
+
+                <!-- About Us Section -->
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">WHAT WE DO</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                            From weekend hackathons to month-long ethical design challenges, we blend hands-on building with critical thinking.
+                        </p>
+                        <p class="blueprint-text">
+                            Our signature events include hackathons where teams tackle real social problems, Ethics in Tech workshops, and collaborative projects with local nonprofits.
+                        </p>
+                        <p class="blueprint-text">
+                            We also host speaker series featuring industry professionals, researchers, and activists who share insights on responsible innovation.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Mini Robot Walk Cycle Test Section -->
+                <section class="section blueprint-section model-section">
+                    <div class="section-header">
+                      <!--  <h2 class="section-title">MINI ROBOT WALK CYCLE TEST</h2> -->
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="model-container">
+                        <div id="mini-robot-viewer" class="robot-viewer"></div>
+                    </div>
+                </section>
+
+                <!-- Gaussian Blur Section -->
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">UPCOMING EVENTS</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        
+                        <p class="blueprint-text">
+                            Stay tuned for our next hackathon, workshop sessions on algorithmic bias, and our monthly Tech & Society discussion circles. Follow our calendar for coding bootcamps, design thinking workshops, and guest lectures from leading voices in ethical technology.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- A* Algorithm Simulation Section -->
+                <section class="section blueprint-section">
+                    <div class="section-header">
+                       <!-- <h2 class="section-title">A* PATHFINDING ALGORITHM</h2> -->
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="astar-container">
+                        <div class="astar-main">
+                            <canvas id="astar-canvas" width="500" height="250"></canvas>
+                            <div class="astar-controls">
+                                <button id="reset-astar" class="astar-btn">Reset</button>
+                            </div>
+                            <div class="astar-info">
+                                <div id="astar-status">Algorithm will start automatically...</div>
+                                <div id="astar-path"></div>
+                            </div>
+                        </div>
+                        <div class="astar-calculations">
+                            <h3>A* Calculations</h3>
+                            <div class="node-scores">
+                                <div class="score-header">
+                                    <span>Node</span>
+                                    <span>g(n)</span>
+                                    <span>h(n)</span>
+                                    <span>f(n)</span>
+                                </div>
+                                <div id="node-scores-list">
+                                    <!-- Node scores will be populated here -->
+                                </div>
+                            </div>
+                            <div class="open-set">
+                                <h4>Open Set</h4>
+                                <div id="open-set-display"></div>
+                            </div>
+                            <div class="closed-set">
+                                <h4>Closed Set</h4>
+                                <div id="closed-set-display"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Autonomous Robot Sweeper Section -->
+                <!--
+                <section class="section blueprint-section model-section">
+                    <div class="section-header">
+                        <h2 class="section-title">AUTONOMOUS ROBOT SWEEPER</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="model-container">
+                        <div id="sweeper-viewer" class="robot-viewer"></div>
+                    </div>
+                </section>
+                -->
+
+                <!-- Site Credits Section -->
+                
+
+            </div>
+
+            <!-- Right Column -->
+            <div class="column right-column">
+                <!-- Floppy Disk Section -->
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">ABOUT US</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                           Tech & Ethics Club is a student-led community for builders, coders, designers, and engineers from all corners of tech — from computer science and robotics to AI, hardware, and beyond. We host hackathons and hands-on challenges that push members to not only build amazing things, but to think deeply about why they’re building them and who they're building for.
+                        </p>
+                        <p class="blueprint-text">
+                            We believe technology isn't neutral — it shapes the world around us. That’s why our focus goes beyond code. We explore the ethical impact of innovation, challenge ourselves to design for equity, privacy, sustainability, and inclusion, and create space for interdisciplinary collaboration.
+                        </p>
+                        <p class="blueprint-text">
+                            Whether you're a beginner or an expert, a roboticist or a web dev, this is a club where you can build, compete, and grow — all while asking the big questions about tech’s role in society.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Python Code Screen Section -->
+                <section class="section blueprint-section code-section">
+                   <div class="section-header">
+                    <!--    <h2 class="section-title">PYTHON CODE EXECUTION</h2> -->
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="code-container">
+                        <div id="python-screen" class="python-screen">
+                            <div class="screen-header">
+                                <div class="screen-controls">
+                                    <div class="control-dot red"></div>
+                                    <div class="control-dot yellow"></div>
+                                    <div class="control-dot green"></div>
+                                </div>
+                                <div class="screen-title">Python Terminal</div>
+                            </div>
+                            <div class="screen-content">
+                                <div id="code-output" class="code-output">
+                                    <div class="prompt">$ python main.py</div>
+                                    <div id="typing-area" class="typing-area"></div>
+                                    <div id="loading-indicator" class="loading-indicator hidden">
+                                        <span class="loading-text">Executing...</span>
+                                        <div class="loading-dots">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </div>
+                                    <div id="program-output" class="program-output hidden"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Touch Screen Interface Section -->
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">OUR COMMITMENT TO ETHICAL TECHNOLOGY</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                            Ethics isn't just a side conversation for us — it's at the heart of everything we do. We believe that every line of code, every design decision, and every technological innovation carries responsibility. That's why ethical considerations are woven into every workshop, hackathon, and project we undertake.
+                        </p>
+                        <p class="blueprint-text">
+                            Our hackathons don't just ask "can we build this?" — they demand we ask "should we build this?" and "who benefits or gets harmed?" Every coding challenge includes prompts about accessibility, privacy, and social impact. Our workshops go beyond teaching technical skills to explore topics like algorithmic fairness, data ethics, surveillance capitalism, and the environmental cost of digital systems.
+                        </p>
+                        <p class="blueprint-text">
+                            We examine real-world case studies where technology has caused harm — from biased hiring algorithms to exploitative gig economy platforms — not to discourage innovation, but to learn how we can do better. We practice inclusive design thinking, study the social implications of emerging technologies, and challenge each other to consider whose voices are missing from the development process.
+                        </p>
+                      
+                    </div>
+                </section>
+
+                <!-- Community Guidelines Section -->
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">COMMUNITY GUIDELINES</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                            Our commitment to creating an inclusive, respectful space where all members can contribute meaningfully. We outline our values around constructive dialogue, diverse perspectives, and maintaining a supportive environment for questioning and learning about complex ethical issues.
+                        </p>
+                        
+                    </div>
+                </section>
+
+                <!-- Small Robot Section -->
+                <section class="section blueprint-section model-section">
+                    <div class="section-header">
+                        <!--<h2 class="section-title">SMALL ROBOT</h2>-->
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="model-container">
+                        <div id="small-robot-viewer" class="robot-viewer"></div>
+                    </div>
+                </section>
+
+                <!-- Bezier Curves Section -->
+                <!--
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">BÉZIER CURVE SYSTEM</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                            Bézier curves provide smooth, mathematically precise paths for vector graphics and animation systems. Control points define the curve's shape, allowing for complex geometric forms with minimal data points.
+                        </p>
+                        <p class="blueprint-text">
+                            Quadratic and cubic Bézier implementations offer different levels of complexity and control. The de Casteljau algorithm efficiently computes curve points through recursive subdivision techniques.
+                        </p>
+                        <p class="blueprint-text">
+                            The system supports both open and closed curve paths, enabling the creation of complex shapes and smooth animations. Control point manipulation provides intuitive editing capabilities for designers and developers.
+                        </p>
+                    </div>
+                </section>
+                -->
+
+
+
+
+
+                <!-- System Overview Section -->
+                <!--
+                <section class="section blueprint-section text-section">
+                    <div class="section-header">
+                        <h2 class="section-title">SYSTEM OVERVIEW</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="text-content">
+                        <p class="blueprint-text">
+                            This comprehensive software architecture integrates multiple subsystems to create a cohesive development environment. Each component operates independently while maintaining interoperability through standardized interfaces.
+                        </p>
+                        <p class="blueprint-text">
+                            Performance optimization strategies include caching mechanisms, parallel processing pipelines, and memory management protocols. The modular design enables scalable deployment across various hardware configurations.
+                        </p>
+                        <p class="blueprint-text">
+                            The system implements a layered architecture with clear separation of concerns between presentation, business logic, and data access layers. This design pattern promotes maintainability and facilitates future enhancements.
+                        </p>
+                    </div>
+                </section>
+                -->
+
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">BETA-2.1</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">OPERATIONAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+            <div class="footer-credits model-credits">
+                <span class="credits-text small">
+                    3D Models: <a href="https://sketchfab.com/3d-models/robot-playground-59fc99d8dcb146f3a6c16dbbcc4680da" target="_blank">Robot Playground</a> by Hadrien59, 
+                    <a href="https://sketchfab.com/3d-models/autonomous-robot-sweeper-0d285c3d015a4573ae1100d298935cb9" target="_blank">Autonomous Robot Sweeper</a> by Janis Zeps, 
+                    <a href="https://sketchfab.com/3d-models/cute-home-robot-7b75f204eb3e42b6babd883773e0789d" target="_blank">Cute Home Robot</a> by Yandrack, 
+                    <a href="https://sketchfab.com/3d-models/small-robot-0bfa872c2faa4b03a1e0508908db6e32" target="_blank">Small Robot</a> by TitMit 
+                    via Sketchfab. Licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>. Educational use.
+                </span>
+            </div>
+        </footer>
+    </div>
+
+
+
+    <script>
+        // Typewriter effect for the title
+        function typeWriter(element, text, speed = 100) {
+            let i = 0;
+            element.innerHTML = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            
+            type();
+        }
+
+        // Smooth scroll to sections
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            } else {
+                // If section doesn't exist, show a placeholder message
+                alert(`${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)} section coming soon!`);
+            }
+        }
+
+        // Three.js Robot Setup
+        let scene, camera, renderer, controls, mixer, clock;
+        let robotModel = null;
+
+        function initRobotViewer() {
+            const container = document.getElementById('robot-viewer');
+            if (!container) return;
+
+            // Add loading indicator
+            container.innerHTML = '<div class="model-loading">LOADING ROBOT MODEL...</div>';
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f9ff);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(1.5, 1.5, 1.5);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 1;
+            controls.maxDistance = 15;
+            controls.maxPolarAngle = Math.PI;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
+            pointLight.position.set(-5, 5, -5);
+            scene.add(pointLight);
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+
+            // Load the GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                '{{ url_for("static", filename="models/Robot Playground.glb") }}',
+                function (gltf) {
+                    robotModel = gltf.scene;
+                    
+                    // Center and scale the model
+                    const box = new THREE.Box3().setFromObject(robotModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 4 / maxDim;
+                    
+                    robotModel.scale.setScalar(scale);
+                    robotModel.position.sub(center.multiplyScalar(scale));
+                    
+                    // Enable shadows
+                    robotModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    scene.add(robotModel);
+                    
+                    // Setup animations if available
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(robotModel);
+                        clock = new THREE.Clock();
+                        
+                        gltf.animations.forEach((clip) => {
+                            mixer.clipAction(clip).play();
+                        });
+                    }
+                    
+                    // Remove loading indicator
+                    container.querySelector('.model-loading')?.remove();
+                    
+                    // Start animation loop
+                    animate();
+                },
+                function (xhr) {
+                    // Progress callback
+                    const progress = (xhr.loaded / xhr.total) * 100;
+                    const loadingElement = container.querySelector('.model-loading');
+                    if (loadingElement) {
+                        loadingElement.textContent = `LOADING ROBOT MODEL... ${Math.round(progress)}%`;
+                    }
+                },
+                function (error) {
+                    console.error('Error loading model:', error);
+                    container.innerHTML = '<div class="model-loading">ERROR LOADING MODEL</div>';
+                }
+            );
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (mixer && clock) {
+                mixer.update(clock.getDelta());
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('robot-viewer');
+            if (!container) return;
+            
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Three.js Sweeper Setup
+        let sweeperScene, sweeperCamera, sweeperRenderer, sweeperControls, sweeperMixer, sweeperClock;
+        let sweeperModel = null;
+
+        function initSweeperViewer() {
+            const container = document.getElementById('sweeper-viewer');
+            if (!container) return;
+
+            // Add loading indicator
+            container.innerHTML = '<div class="model-loading">LOADING SWEEPER MODEL...</div>';
+
+            // Scene setup
+            sweeperScene = new THREE.Scene();
+            sweeperScene.background = new THREE.Color(0xf8f9ff);
+
+            // Camera setup
+            sweeperCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            sweeperCamera.position.set(3, 3, 3);
+
+            // Renderer setup
+            sweeperRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            sweeperRenderer.setSize(container.clientWidth, container.clientHeight);
+            sweeperRenderer.setPixelRatio(window.devicePixelRatio);
+            sweeperRenderer.shadowMap.enabled = true;
+            sweeperRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            sweeperRenderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(sweeperRenderer.domElement);
+
+            // Controls
+            sweeperControls = new THREE.OrbitControls(sweeperCamera, sweeperRenderer.domElement);
+            sweeperControls.enableDamping = true;
+            sweeperControls.dampingFactor = 0.05;
+            sweeperControls.screenSpacePanning = false;
+            sweeperControls.minDistance = 1;
+            sweeperControls.maxDistance = 15;
+            sweeperControls.maxPolarAngle = Math.PI;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            sweeperScene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            sweeperScene.add(directionalLight);
+
+            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
+            pointLight.position.set(-5, 5, -5);
+            sweeperScene.add(pointLight);
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            sweeperScene.add(gridHelper);
+
+            // Load the GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                '{{ url_for("static", filename="models/Autonomous Robot Sweeper.glb") }}',
+                function (gltf) {
+                    sweeperModel = gltf.scene;
+                    
+                    // Center and scale the model
+                    const box = new THREE.Box3().setFromObject(sweeperModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 4 / maxDim;
+                    
+                    sweeperModel.scale.setScalar(scale);
+                    sweeperModel.position.sub(center.multiplyScalar(scale));
+                    
+                    // Enable shadows
+                    sweeperModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    sweeperScene.add(sweeperModel);
+                    
+                    // Setup animations if available
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        sweeperMixer = new THREE.AnimationMixer(sweeperModel);
+                        sweeperClock = new THREE.Clock();
+                        
+                        gltf.animations.forEach((clip) => {
+                            sweeperMixer.clipAction(clip).play();
+                        });
+                    }
+                    
+                    // Remove loading indicator
+                    container.querySelector('.model-loading')?.remove();
+                    
+                    // Start animation loop
+                    animateSweeper();
+                },
+                function (xhr) {
+                    // Progress callback
+                    const progress = (xhr.loaded / xhr.total) * 100;
+                    const loadingElement = container.querySelector('.model-loading');
+                    if (loadingElement) {
+                        loadingElement.textContent = `LOADING SWEEPER MODEL... ${Math.round(progress)}%`;
+                    }
+                },
+                function (error) {
+                    console.error('Error loading sweeper model:', error);
+                    container.innerHTML = '<div class="model-loading">ERROR LOADING SWEEPER MODEL</div>';
+                }
+            );
+
+            // Handle window resize
+            window.addEventListener('resize', onSweeperWindowResize);
+        }
+
+        function animateSweeper() {
+            requestAnimationFrame(animateSweeper);
+            
+            if (sweeperMixer && sweeperClock) {
+                sweeperMixer.update(sweeperClock.getDelta());
+            }
+            
+            sweeperControls.update();
+            sweeperRenderer.render(sweeperScene, sweeperCamera);
+        }
+
+        function onSweeperWindowResize() {
+            const container = document.getElementById('sweeper-viewer');
+            if (!container) return;
+            
+            sweeperCamera.aspect = container.clientWidth / container.clientHeight;
+            sweeperCamera.updateProjectionMatrix();
+            sweeperRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Mini Robot Setup
+        let miniScene, miniCamera, miniRenderer, miniControls, miniMixer, miniClock;
+        let miniModel = null;
+
+        function initMiniRobotViewer() {
+            const container = document.getElementById('mini-robot-viewer');
+            if (!container) return;
+
+            container.innerHTML = '<div class="model-loading">LOADING MINI ROBOT MODEL...</div>';
+
+            miniScene = new THREE.Scene();
+            miniScene.background = new THREE.Color(0xf8f9ff);
+
+            miniCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            miniCamera.position.set(2, 2, 2);
+
+            miniRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            miniRenderer.setSize(container.clientWidth, container.clientHeight);
+            miniRenderer.setPixelRatio(window.devicePixelRatio);
+            miniRenderer.shadowMap.enabled = true;
+            miniRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            miniRenderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(miniRenderer.domElement);
+
+            miniControls = new THREE.OrbitControls(miniCamera, miniRenderer.domElement);
+            miniControls.enableDamping = true;
+            miniControls.dampingFactor = 0.05;
+            miniControls.screenSpacePanning = false;
+            miniControls.minDistance = 1;
+            miniControls.maxDistance = 15;
+            miniControls.maxPolarAngle = Math.PI;
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            miniScene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            miniScene.add(directionalLight);
+
+            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
+            pointLight.position.set(-5, 5, -5);
+            miniScene.add(pointLight);
+
+            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            miniScene.add(gridHelper);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                '{{ url_for("static", filename="models/Mini_Robot_webp.glb") }}',
+                function (gltf) {
+                    miniModel = gltf.scene;
+                    
+                    const box = new THREE.Box3().setFromObject(miniModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 4 / maxDim;
+                    
+                    miniModel.scale.setScalar(scale);
+                    miniModel.position.sub(center.multiplyScalar(scale));
+                    
+                    miniModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    miniScene.add(miniModel);
+                    
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        miniMixer = new THREE.AnimationMixer(miniModel);
+                        miniClock = new THREE.Clock();
+                        
+                        gltf.animations.forEach((clip) => {
+                            miniMixer.clipAction(clip).play();
+                        });
+                    }
+                    
+                    container.querySelector('.model-loading')?.remove();
+                    animateMini();
+                },
+                function (xhr) {
+                    const progress = (xhr.loaded / xhr.total) * 100;
+                    const loadingElement = container.querySelector('.model-loading');
+                    if (loadingElement) {
+                        loadingElement.textContent = `LOADING MINI ROBOT MODEL... ${Math.round(progress)}%`;
+                    }
+                },
+                function (error) {
+                    console.error('Error loading mini robot model:', error);
+                    container.innerHTML = '<div class="model-loading">ERROR LOADING MINI ROBOT MODEL</div>';
+                }
+            );
+
+            window.addEventListener('resize', onMiniWindowResize);
+        }
+
+        function animateMini() {
+            requestAnimationFrame(animateMini);
+            
+            if (miniMixer && miniClock) {
+                miniMixer.update(miniClock.getDelta());
+            }
+            
+            miniControls.update();
+            miniRenderer.render(miniScene, miniCamera);
+        }
+
+        function onMiniWindowResize() {
+            const container = document.getElementById('mini-robot-viewer');
+            if (!container) return;
+            
+            miniCamera.aspect = container.clientWidth / container.clientHeight;
+            miniCamera.updateProjectionMatrix();
+            miniRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Cute Home Robot Setup
+        let cuteScene, cuteCamera, cuteRenderer, cuteControls, cuteMixer, cuteClock;
+        let cuteModel = null;
+
+        function initCuteRobotViewer() {
+            const container = document.getElementById('cute-robot-viewer');
+            if (!container) return;
+
+            container.innerHTML = '<div class="model-loading">LOADING CUTE ROBOT MODEL...</div>';
+
+            cuteScene = new THREE.Scene();
+            cuteScene.background = new THREE.Color(0xf8f9ff);
+
+            cuteCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cuteCamera.position.set(2, 2, 2);
+
+            cuteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            cuteRenderer.setSize(container.clientWidth, container.clientHeight);
+            cuteRenderer.setPixelRatio(window.devicePixelRatio);
+            cuteRenderer.shadowMap.enabled = true;
+            cuteRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            cuteRenderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(cuteRenderer.domElement);
+
+            cuteControls = new THREE.OrbitControls(cuteCamera, cuteRenderer.domElement);
+            cuteControls.enableDamping = true;
+            cuteControls.dampingFactor = 0.05;
+            cuteControls.screenSpacePanning = false;
+            cuteControls.minDistance = 1;
+            cuteControls.maxDistance = 15;
+            cuteControls.maxPolarAngle = Math.PI;
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            cuteScene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            cuteScene.add(directionalLight);
+
+            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
+            pointLight.position.set(-5, 5, -5);
+            cuteScene.add(pointLight);
+
+            // Add a custom ground plane with brown color
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8B4513,  // Brown color to match the base
+                transparent: true,
+                opacity: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -2;
+            ground.receiveShadow = true;
+            cuteScene.add(ground);
+
+            const gridHelper = new THREE.GridHelper(10, 10, 0x8B4513, 0x8B4513); // Brown color
+            gridHelper.material.opacity = 0.3;
+            gridHelper.material.transparent = true;
+            cuteScene.add(gridHelper);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                '{{ url_for("static", filename="models/Cute Home Robot.glb") }}',
+                function (gltf) {
+                    cuteModel = gltf.scene;
+                    
+                    const box = new THREE.Box3().setFromObject(cuteModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 4 / maxDim;
+                    
+                    cuteModel.scale.setScalar(scale);
+                    cuteModel.position.sub(center.multiplyScalar(scale));
+                    
+                    cuteModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Hide brown/ground parts of the model
+                            if (child.material && child.material.color) {
+                                const color = child.material.color;
+                                // Check if the material is brown-ish
+                                if (color.r > 0.4 && color.g > 0.2 && color.g < 0.4 && color.b < 0.3) {
+                                    child.visible = false;
+                                }
+                            }
+                        }
+                    });
+                    
+                    cuteScene.add(cuteModel);
+                    
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        cuteMixer = new THREE.AnimationMixer(cuteModel);
+                        cuteClock = new THREE.Clock();
+                        
+                        gltf.animations.forEach((clip) => {
+                            cuteMixer.clipAction(clip).play();
+                        });
+                    }
+                    
+                    container.querySelector('.model-loading')?.remove();
+                    animateCute();
+                },
+                function (xhr) {
+                    const progress = (xhr.loaded / xhr.total) * 100;
+                    const loadingElement = container.querySelector('.model-loading');
+                    if (loadingElement) {
+                        loadingElement.textContent = `LOADING CUTE ROBOT MODEL... ${Math.round(progress)}%`;
+                    }
+                },
+                function (error) {
+                    console.error('Error loading cute robot model:', error);
+                    container.innerHTML = '<div class="model-loading">ERROR LOADING CUTE ROBOT MODEL</div>';
+                }
+            );
+
+            window.addEventListener('resize', onCuteWindowResize);
+        }
+
+        function animateCute() {
+            requestAnimationFrame(animateCute);
+            
+            if (cuteMixer && cuteClock) {
+                cuteMixer.update(cuteClock.getDelta());
+            }
+            
+            cuteControls.update();
+            cuteRenderer.render(cuteScene, cuteCamera);
+        }
+
+        function onCuteWindowResize() {
+            const container = document.getElementById('cute-robot-viewer');
+            if (!container) return;
+            
+            cuteCamera.aspect = container.clientWidth / container.clientHeight;
+            cuteCamera.updateProjectionMatrix();
+            cuteRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Small Robot Setup
+        let smallScene, smallCamera, smallRenderer, smallControls, smallMixer, smallClock;
+        let smallModel = null;
+
+        function initSmallRobotViewer() {
+            const container = document.getElementById('small-robot-viewer');
+            if (!container) return;
+
+            container.innerHTML = '<div class="model-loading">LOADING SMALL ROBOT MODEL...</div>';
+
+            smallScene = new THREE.Scene();
+            smallScene.background = new THREE.Color(0xf8f9ff);
+
+            smallCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            smallCamera.position.set(2, 2, 2);
+
+            smallRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            smallRenderer.setSize(container.clientWidth, container.clientHeight);
+            smallRenderer.setPixelRatio(window.devicePixelRatio);
+            smallRenderer.shadowMap.enabled = true;
+            smallRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            smallRenderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(smallRenderer.domElement);
+
+            smallControls = new THREE.OrbitControls(smallCamera, smallRenderer.domElement);
+            smallControls.enableDamping = true;
+            smallControls.dampingFactor = 0.05;
+            smallControls.screenSpacePanning = false;
+            smallControls.minDistance = 1;
+            smallControls.maxDistance = 15;
+            smallControls.maxPolarAngle = Math.PI;
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            smallScene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            smallScene.add(directionalLight);
+
+            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
+            pointLight.position.set(-5, 5, -5);
+            smallScene.add(pointLight);
+
+            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            smallScene.add(gridHelper);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                '{{ url_for("static", filename="models/Small Robot.glb") }}',
+                function (gltf) {
+                    smallModel = gltf.scene;
+                    
+                    const box = new THREE.Box3().setFromObject(smallModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 4 / maxDim;
+                    
+                    smallModel.scale.setScalar(scale);
+                    smallModel.position.sub(center.multiplyScalar(scale));
+                    
+                    smallModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    smallScene.add(smallModel);
+                    
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        smallMixer = new THREE.AnimationMixer(smallModel);
+                        smallClock = new THREE.Clock();
+                        
+                        gltf.animations.forEach((clip) => {
+                            smallMixer.clipAction(clip).play();
+                        });
+                    }
+                    
+                    container.querySelector('.model-loading')?.remove();
+                    animateSmall();
+                },
+                function (xhr) {
+                    const progress = (xhr.loaded / xhr.total) * 100;
+                    const loadingElement = container.querySelector('.model-loading');
+                    if (loadingElement) {
+                        loadingElement.textContent = `LOADING SMALL ROBOT MODEL... ${Math.round(progress)}%`;
+                    }
+                },
+                function (error) {
+                    console.error('Error loading small robot model:', error);
+                    container.innerHTML = '<div class="model-loading">ERROR LOADING SMALL ROBOT MODEL</div>';
+                }
+            );
+
+            window.addEventListener('resize', onSmallWindowResize);
+        }
+
+        function animateSmall() {
+            requestAnimationFrame(animateSmall);
+            
+            if (smallMixer && smallClock) {
+                smallMixer.update(smallClock.getDelta());
+            }
+            
+            smallControls.update();
+            smallRenderer.render(smallScene, smallCamera);
+        }
+
+        function onSmallWindowResize() {
+            const container = document.getElementById('small-robot-viewer');
+            if (!container) return;
+            
+            smallCamera.aspect = container.clientWidth / container.clientHeight;
+            smallCamera.updateProjectionMatrix();
+            smallRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Python Code Animation
+        let animationRunning = false;
+        let animationTimeouts = [];
+
+        function clearAllTimeouts() {
+            animationTimeouts.forEach(timeout => clearTimeout(timeout));
+            animationTimeouts = [];
+        }
+
+                    function initPythonCodeAnimation() {
+                // Prevent multiple animations from running simultaneously
+                if (animationRunning) {
+                    clearAllTimeouts();
+                }
+                
+                animationRunning = true;
+
+                const pythonCode = `# Tech & Ethics Club Welcome Script
+name = input("What's your name? ")
+interests = input("Are you interested in tech and ethics? (yes/no): ")
+
+if interests.lower() == "yes":
+    print(f"Welcome {name}! Join our group and start creating!")
+    print("We host hackathons, workshops, and discussions.")
+    print("Let's build amazing things together!")
+else:
+    print("No worries! Feel free to check us out anytime.")`;
+
+                const output = `Tech & Ethics Club Welcome Script
+================================
+
+What's your name? Alex
+Are you interested in tech and ethics? (yes/no): yes
+Welcome Alex! Join our group and start creating!
+We host hackathons, workshops, and discussions.
+Let's build amazing things together!
+
+Program completed successfully!`;
+
+            const typingArea = document.getElementById('typing-area');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const programOutput = document.getElementById('program-output');
+
+            if (!typingArea || !loadingIndicator || !programOutput) {
+                animationRunning = false;
+                return;
+            }
+
+            function clearScreen() {
+                // Completely reset all content
+                typingArea.textContent = '';
+                typingArea.innerHTML = '';
+                loadingIndicator.classList.add('hidden');
+                programOutput.classList.add('hidden');
+                programOutput.textContent = '';
+                programOutput.innerHTML = '';
+            }
+
+            function showOutput() {
+                loadingIndicator.classList.add('hidden');
+                programOutput.classList.remove('hidden');
+                programOutput.textContent = output;
+                
+                // After showing output, clear and restart
+                const timeout1 = setTimeout(() => {
+                    clearScreen();
+                    const timeout2 = setTimeout(() => {
+                        startTyping();
+                    }, 1000);
+                    animationTimeouts.push(timeout2);
+                }, 3000);
+                animationTimeouts.push(timeout1);
+            }
+
+            function showLoading() {
+                loadingIndicator.classList.remove('hidden');
+                const timeout = setTimeout(showOutput, 2000);
+                animationTimeouts.push(timeout);
+            }
+
+            function startTyping() {
+                // Ensure screen is completely clear before starting
+                clearScreen();
+                
+                let currentIndex = 0;
+                let currentLine = 0;
+                const lines = pythonCode.split('\n');
+
+                function typeNext() {
+                    if (currentLine < lines.length) {
+                        const line = lines[currentLine];
+                        if (currentIndex < line.length) {
+                            typingArea.textContent += line[currentIndex];
+                            currentIndex++;
+                            const timeout = setTimeout(typeNext, 50);
+                            animationTimeouts.push(timeout);
+                        } else {
+                            typingArea.textContent += '\n';
+                            currentLine++;
+                            currentIndex = 0;
+                            const timeout = setTimeout(typeNext, 100);
+                            animationTimeouts.push(timeout);
+                        }
+                    } else {
+                        // Typing complete, show loading
+                        const timeout = setTimeout(showLoading, 500);
+                        animationTimeouts.push(timeout);
+                    }
+                }
+
+                typeNext();
+            }
+
+                            // Start the animation cycle
+                startTyping();
+            }
+
+            // A* Algorithm Visualization
+            let astarCanvas, astarCtx;
+            let astarNodes = [];
+            let astarEdges = [];
+            let astarAnimationId;
+            let astarCurrentStep = 0;
+            let astarPath = [];
+            let astarOpenSet = [];
+            let astarClosedSet = [];
+            let astarCameFrom = {};
+            let astarGScore = {};
+            let astarFScore = {};
+            let astarCurrentNode = null; // Track the node currently being explored
+            let astarConsideredNodes = []; // Track nodes being considered but not chosen
+            let astarNewNodes = []; // Track newly added nodes for consideration
+
+            function initAStarVisualization() {
+                astarCanvas = document.getElementById('astar-canvas');
+                if (!astarCanvas) return;
+                
+                astarCtx = astarCanvas.getContext('2d');
+                
+                // Define graph structure
+                astarNodes = [
+                    { id: 'A', x: 100, y: 125, label: 'A', isStart: true },
+                    { id: 'B', x: 200, y: 60, label: 'B' },
+                    { id: 'C', x: 200, y: 190, label: 'C' },
+                    { id: 'D', x: 300, y: 60, label: 'D' },
+                    { id: 'E', x: 300, y: 190, label: 'E' },
+                    { id: 'F', x: 400, y: 125, label: 'F', isGoal: true }
+                ];
+                
+                astarEdges = [
+                    { from: 'A', to: 'B', cost: 2 },
+                    { from: 'A', to: 'C', cost: 3 },
+                    { from: 'B', to: 'D', cost: 2 },
+                    { from: 'B', to: 'E', cost: 4 },
+                    { from: 'C', to: 'D', cost: 3 },
+                    { from: 'C', to: 'E', cost: 2 },
+                    { from: 'D', to: 'F', cost: 2 },
+                    { from: 'E', to: 'F', cost: 3 }
+                ];
+                
+                // Initialize A* data structures
+                astarOpenSet = ['A'];
+                astarClosedSet = [];
+                astarCameFrom = {};
+                astarGScore = { 'A': 0 };
+                astarFScore = { 'A': heuristic('A', 'F') };
+                astarPath = [];
+                astarCurrentStep = 0;
+                
+                // Add event listeners
+                document.getElementById('reset-astar').addEventListener('click', resetAStar);
+                
+                // Initial draw
+                drawAStarGraph();
+                updateAStarStatus('Algorithm will start automatically...');
+                updateCalculationsPanel();
+                
+                // Auto-start after a short delay
+                setTimeout(() => {
+                    startAStar();
+                }, 1000);
+            }
+
+            function heuristic(node, goal) {
+                const nodeObj = astarNodes.find(n => n.id === node);
+                const goalObj = astarNodes.find(n => n.id === goal);
+                const dx = Math.abs(nodeObj.x - goalObj.x);
+                const dy = Math.abs(nodeObj.y - goalObj.y);
+                return (dx + dy) / 60; // Manhattan distance, normalized to match edge costs
+            }
+
+            function drawAStarGraph() {
+                astarCtx.clearRect(0, 0, astarCanvas.width, astarCanvas.height);
+                
+                // Draw edges
+                astarCtx.strokeStyle = '#ddd';
+                astarCtx.lineWidth = 2;
+                astarEdges.forEach(edge => {
+                    const fromNode = astarNodes.find(n => n.id === edge.from);
+                    const toNode = astarNodes.find(n => n.id === edge.to);
+                    astarCtx.beginPath();
+                    astarCtx.moveTo(fromNode.x, fromNode.y);
+                    astarCtx.lineTo(toNode.x, toNode.y);
+                    astarCtx.stroke();
+                    
+                    // Draw edge cost
+                    const midX = (fromNode.x + toNode.x) / 2;
+                    const midY = (fromNode.y + toNode.y) / 2;
+                    astarCtx.fillStyle = '#666';
+                    astarCtx.font = '12px Arial';
+                    astarCtx.textAlign = 'center';
+                    astarCtx.textBaseline = 'middle';
+                    astarCtx.fillText(edge.cost.toString(), midX, midY);
+                });
+                
+                // Draw nodes
+                astarNodes.forEach(node => {
+                    let color = '#9C27B0'; // Default purple
+                    let borderColor = '#7B1FA2';
+                    
+                    if (node.isStart) {
+                        color = '#2196F3'; // Blue for start
+                        borderColor = '#1976D2';
+                    } else if (node.isGoal) {
+                        color = '#E91E63'; // Pink for goal
+                        borderColor = '#C2185B';
+                    } else if (node.id === astarCurrentNode) {
+                        color = '#FF4081'; // Bright pink for currently being explored
+                        borderColor = '#F50057';
+                    } else if (astarConsideredNodes.includes(node.id)) {
+                        color = '#E91E63'; // Pink for considered but not chosen
+                        borderColor = '#C2185B';
+                    } else if (astarOpenSet.includes(node.id)) {
+                        color = '#9C27B0'; // Purple for open set
+                        borderColor = '#7B1FA2';
+                    } else if (astarClosedSet.includes(node.id)) {
+                        color = '#673AB7'; // Dark purple for closed set
+                        borderColor = '#512DA8';
+                    }
+                    
+                    // Node circle
+                    astarCtx.fillStyle = color;
+                    astarCtx.strokeStyle = borderColor;
+                    astarCtx.lineWidth = 3;
+                    astarCtx.beginPath();
+                    astarCtx.arc(node.x, node.y, 20, 0, 2 * Math.PI);
+                    astarCtx.fill();
+                    astarCtx.stroke();
+                    
+                    // Node label
+                    astarCtx.fillStyle = '#000';
+                    astarCtx.font = 'bold 14px Arial';
+                    astarCtx.textAlign = 'center';
+                    astarCtx.textBaseline = 'middle';
+                    astarCtx.fillText(node.label, node.x, node.y);
+                });
+                
+                // Draw path
+                if (astarPath.length > 1) {
+                    astarCtx.strokeStyle = '#E91E63';
+                    astarCtx.lineWidth = 4;
+                    astarCtx.setLineDash([5, 5]);
+                    for (let i = 0; i < astarPath.length - 1; i++) {
+                        const fromNode = astarNodes.find(n => n.id === astarPath[i]);
+                        const toNode = astarNodes.find(n => n.id === astarPath[i + 1]);
+                        astarCtx.beginPath();
+                        astarCtx.moveTo(fromNode.x, fromNode.y);
+                        astarCtx.lineTo(toNode.x, toNode.y);
+                        astarCtx.stroke();
+                    }
+                    astarCtx.setLineDash([]);
+                }
+            }
+
+            function updateAStarStatus(message) {
+                const statusEl = document.getElementById('astar-status');
+                const pathEl = document.getElementById('astar-path');
+                if (statusEl) statusEl.textContent = message;
+                if (pathEl) pathEl.textContent = astarPath.length > 0 ? `Path: ${astarPath.join(' → ')}` : '';
+                
+                // Update calculations panel
+                updateCalculationsPanel();
+            }
+            
+            function updateCalculationsPanel() {
+                const scoresList = document.getElementById('node-scores-list');
+                const openSetDisplay = document.getElementById('open-set-display');
+                const closedSetDisplay = document.getElementById('closed-set-display');
+                
+                if (!scoresList || !openSetDisplay || !closedSetDisplay) return;
+                
+                // Update node scores
+                let scoresHTML = '';
+                astarNodes.forEach(node => {
+                    const gScore = astarGScore[node.id] !== undefined ? astarGScore[node.id].toFixed(2) : '-';
+                    const hScore = heuristic(node.id, 'F').toFixed(2);
+                    const fScore = astarFScore[node.id] !== undefined ? astarFScore[node.id].toFixed(2) : '-';
+                    
+                    let rowClass = '';
+                    if (node.id === astarCurrentNode) {
+                        rowClass = 'current';
+                    } else if (astarOpenSet.includes(node.id)) {
+                        rowClass = 'open';
+                    } else if (astarClosedSet.includes(node.id)) {
+                        rowClass = 'closed';
+                    }
+                    
+                    scoresHTML += `
+                        <div class="score-row ${rowClass}">
+                            <span>${node.id}</span>
+                            <span>${gScore}</span>
+                            <span>${hScore}</span>
+                            <span>${fScore}</span>
+                        </div>
+                    `;
+                });
+                scoresList.innerHTML = scoresHTML;
+                
+                // Update open set
+                openSetDisplay.textContent = astarOpenSet.length > 0 ? astarOpenSet.join(', ') : 'Empty';
+                
+                // Update closed set
+                closedSetDisplay.textContent = astarClosedSet.length > 0 ? astarClosedSet.join(', ') : 'Empty';
+            }
+
+            function startAStar() {
+                if (astarAnimationId) {
+                    cancelAnimationFrame(astarAnimationId);
+                }
+                
+                astarCurrentStep = 0;
+                astarPath = [];
+                astarOpenSet = ['A'];
+                astarClosedSet = [];
+                astarCameFrom = {};
+                astarGScore = { 'A': 0 };
+                astarFScore = { 'A': heuristic('A', 'F') };
+                astarCurrentNode = null;
+                
+                updateAStarStatus('Starting A* algorithm...');
+                astarStep();
+            }
+
+            function astarStep() {
+                if (astarOpenSet.length === 0) {
+                    updateAStarStatus('No path found!');
+                    return;
+                }
+                
+                // Show consideration of newly added nodes
+                astarConsideredNodes = [...astarNewNodes];
+                drawAStarGraph();
+                
+                // Wait a moment to show all candidates being considered
+                setTimeout(() => {
+                    // Get current node (lowest f_score)
+                    const current = astarOpenSet.reduce((lowest, node) => 
+                        astarFScore[node] < astarFScore[lowest] ? node : lowest
+                    , astarOpenSet[0]);
+                    
+                    // Clear considered nodes and set the current node being explored
+                    astarConsideredNodes = [];
+                    astarNewNodes = []; // Clear new nodes array
+                    astarCurrentNode = current;
+                
+                if (current === 'F') {
+                    // Reconstruct path
+                    astarPath = ['F'];
+                    let node = 'F';
+                    while (astarCameFrom[node]) {
+                        node = astarCameFrom[node];
+                        astarPath.unshift(node);
+                    }
+                    
+                    updateAStarStatus(`Path found! Cost: ${astarGScore['F']}`);
+                    astarCurrentNode = null; // Clear current node when done
+                    drawAStarGraph();
+                    
+                    // Auto-restart after 2 seconds
+                    setTimeout(() => {
+                        resetAStar();
+                    }, 2000);
+                    return;
+                }
+                
+                // Update status
+                updateAStarStatus(`Exploring node ${current} (f=${astarFScore[current].toFixed(2)})`);
+                
+                // Draw the current state (current node in pink)
+                drawAStarGraph();
+                
+                // Wait a moment to show the current node being explored, then move to closed set
+                setTimeout(() => {
+                    // Move current from open to closed set
+                    astarOpenSet = astarOpenSet.filter(n => n !== current);
+                    astarClosedSet.push(current);
+                    
+                    // Keep current node pink for a bit longer to show it was explored
+                    setTimeout(() => {
+                        astarCurrentNode = null;
+                    }, 300);
+                    
+                    // Check neighbors
+                    const neighbors = astarEdges
+                        .filter(edge => edge.from === current)
+                        .map(edge => ({ to: edge.to, cost: edge.cost }));
+                    
+                    neighbors.forEach(({ to: neighbor, cost }) => {
+                        if (astarClosedSet.includes(neighbor)) return;
+                        
+                        const tentativeG = astarGScore[current] + cost;
+                        
+                        if (!astarOpenSet.includes(neighbor)) {
+                            astarOpenSet.push(neighbor);
+                            astarNewNodes.push(neighbor); // Track newly added nodes
+                            // Initialize scores for new nodes
+                            astarGScore[neighbor] = tentativeG;
+                            astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
+                        } else if (tentativeG >= astarGScore[neighbor]) {
+                            return;
+                        } else {
+                            // Update scores for existing nodes with better path
+                            astarGScore[neighbor] = tentativeG;
+                            astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
+                        }
+                        
+                        // Update the path
+                        astarCameFrom[neighbor] = current;
+                    });
+                    
+                    drawAStarGraph();
+                    
+                    // Continue after delay
+                    setTimeout(() => {
+                        astarAnimationId = requestAnimationFrame(astarStep);
+                    }, 1000);
+                }, 500);
+                }, 800); // Close the consideration setTimeout - longer to show consideration phase
+                
+                return; // Exit early since we're handling the continuation in setTimeout
+            }
+
+            function resetAStar() {
+                if (astarAnimationId) {
+                    cancelAnimationFrame(astarAnimationId);
+                }
+                
+                astarOpenSet = ['A'];
+                astarClosedSet = [];
+                astarCameFrom = {};
+                astarGScore = { 'A': 0 };
+                astarFScore = { 'A': heuristic('A', 'F') };
+                astarPath = [];
+                astarCurrentNode = null;
+                astarConsideredNodes = [];
+                astarNewNodes = [];
+                
+                drawAStarGraph();
+                updateAStarStatus('Algorithm will start automatically...');
+                
+                // Auto-start after a short delay
+                setTimeout(() => {
+                    startAStar();
+                }, 1000);
+            }
+
+        // Intersection Observer for animations
+        function initAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        
+                        // Initialize 3D viewer when model section comes into view
+                        if (entry.target.classList.contains('model-section')) {
+                            setTimeout(() => {
+                                // Check which robot viewer to initialize
+                                if (entry.target.querySelector('#sweeper-viewer')) {
+                                    initSweeperViewer();
+                                } else if (entry.target.querySelector('#mini-robot-viewer')) {
+                                    initMiniRobotViewer();
+                                } else if (entry.target.querySelector('#cute-robot-viewer')) {
+                                    initCuteRobotViewer();
+                                } else if (entry.target.querySelector('#small-robot-viewer')) {
+                                    initSmallRobotViewer();
+                                } else {
+                                    initRobotViewer();
+                                }
+                            }, 500);
+                        }
+                        
+                                    // Initialize Python code animation when code section comes into view
+            if (entry.target.classList.contains('code-section') && !animationRunning) {
+                setTimeout(() => {
+                    initPythonCodeAnimation();
+                }, 500);
+            }
+            
+            // Initialize A* algorithm visualization when A* section comes into view
+            if (entry.target.querySelector('#astar-canvas')) {
+                setTimeout(() => {
+                    initAStarVisualization();
+                }, 500);
+            }
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all blueprint sections
+            document.querySelectorAll('.blueprint-section').forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+
+
+        // Start everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const titleElement = document.getElementById('typewriter-title');
+            const originalText = titleElement.textContent;
+            typeWriter(titleElement, originalText, 150);
+            
+            // Initialize animations after a short delay
+            setTimeout(() => {
+                initAnimations();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

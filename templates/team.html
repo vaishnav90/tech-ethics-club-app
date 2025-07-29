@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Team - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+        <!-- Grid Background -->
+        <div class="grid-background"></div>
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">PAGE:</span>
+                        <span class="value">TEAM</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.5</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">GALLERY</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">OUR TEAM</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- Page Markers -->
+        <div class="page-marker left">TEAM</div>
+        <div class="page-marker right">1.5</div>
+
+        <!-- Main Content -->
+        <main class="content team-page">
+            <!-- Team Members Row -->
+            <div class="team-members-container">
+                <!-- Christopher Ho Section -->
+                <section class="section blueprint-section team-member-section">
+                    <div class="section-header">
+                        <h2 class="section-title">CHRISTOPHER HO</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="team-member-content">
+                        <div class="member-image">
+                            <img src="{{ url_for('static', filename='imgs/chrispic_optimized.jpg') }}" alt="Christopher Ho" class="member-photo">
+                        </div>
+                        <div class="member-info">
+                            <h3 class="member-role">Lead Events & Coordinator</h3>
+                            <p class="blueprint-text">
+                                Orchestrating our hackathons, workshops, and community events. Dedicated to creating engaging experiences that inspire ethical technology development.
+                            </p>
+                            <p class="blueprint-text">
+                                Manages event logistics, coordinates with speakers and partners, and ensures our programs provide meaningful learning opportunities for all participants.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Vaishnav Anand Section -->
+                <section class="section blueprint-section team-member-section">
+                    <div class="section-header">
+                        <h2 class="section-title">VAISHNAV ANAND</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="team-member-content">
+                        <div class="member-image">
+                            <img src="{{ url_for('static', filename='imgs/headshot_athenian_optimized.jpg') }}" alt="Vaishnav Anand" class="member-photo">
+                        </div>
+                        <div class="member-info">
+                            <h3 class="member-role">President</h3>
+                            <p class="blueprint-text">
+                                Leading our mission to build technology that serves humanity. Passionate about ethical AI, responsible innovation, and creating inclusive spaces for learning and collaboration.
+                            </p>
+                            <p class="blueprint-text">
+                                Focuses on strategic planning, community building, and ensuring our activities align with our commitment to social impact and ethical technology development.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Aditya Section -->
+                <section class="section blueprint-section team-member-section">
+                    <div class="section-header">
+                        <h2 class="section-title">ADITYA BAKHANDI</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="team-member-content">
+                        <div class="member-image">
+                            <div class="image-placeholder">IMAGE</div>
+                        </div>
+                        <div class="member-info">
+                            <h3 class="member-role">Lead Technical</h3>
+                            <p class="blueprint-text">
+                                Driving technical excellence and innovation across our projects. Expert in emerging technologies with a focus on responsible implementation and ethical design.
+                            </p>
+                            <p class="blueprint-text">
+                                Leads technical workshops, mentors members on best practices, and ensures our projects demonstrate both technical sophistication and social responsibility.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">BETA-2.1</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">OPERATIONAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Intersection Observer for animations
+        function initAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all blueprint sections
+            document.querySelectorAll('.blueprint-section').forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Start animations when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                initAnimations();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "club2",
+			"path": "."
+		},
+		{
+			"name": "Robot Playground",
+			"path": "../Downloads/Robot Playground"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "club2"
+	}
+}

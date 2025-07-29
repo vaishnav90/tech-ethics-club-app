@@ -1,0 +1,52 @@
+# Exclude large source files but keep optimized versions
+*.glb
+*.gltf
+*.obj
+*.fbx
+*.blend
+*.max
+*.ma
+*.mb
+
+# Exclude large image source files
+*.psd
+*.ai
+*.sketch
+*.fig
+
+# Exclude development files
+.git/
+.gitignore
+README.md
+*.log
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+
+# Exclude sensitive files
+tech-ethics-club-sa-key.json
+
+# Exclude large video files
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# Exclude large audio files
+*.wav
+*.mp3
+*.aiff
+
+# Keep only optimized images and essential files
+!static/models/Autonomous Robot Sweeper.glb
+!static/models/Cute Home Robot.glb
+!static/models/Robot Playground.glb
+!static/models/Small Robot.glb
+!static/models/Mini_Robot_webp.glb
+!static/imgs/*.jpg
+!static/imgs/*.jpeg
+!static/imgs/*.png
+!static/imgs/*.webp
+!static/uploads/
