@@ -1,4 +1,4 @@
-runtime: python39
+runtime: python311
 entrypoint: gunicorn -b :$PORT app:app --timeout 120 --workers 1
 
 instance_class: F1
@@ -17,5 +17,7 @@ handlers:
 
 env_variables:
   GOOGLE_CLOUD_PROJECT: techandethics
+  GMAIL_APP_PASSWORD: "ppoe onud hlfu pace"
+  STORAGE_BUCKET: "tech-ethics-club-uploads"
 
 service_account: tech-ethics-club-sa@techandethics.iam.gserviceaccount.com 

@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-Cloud User class for Flask-Login integration
-"""
+
 
 from flask_login import UserMixin
 from cloud_storage import cloud_storage
@@ -35,7 +32,6 @@ class CloudUser(UserMixin):
     
     @staticmethod
     def get(user_id):
-        """Get user by ID for Flask-Login."""
         user_data = cloud_storage.get_user_by_id(user_id)
         if user_data:
             return CloudUser(user_data)
@@ -43,7 +39,6 @@ class CloudUser(UserMixin):
     
     @staticmethod
     def get_by_email(email):
-        """Get user by email."""
         user_data = cloud_storage.get_user_by_email(email)
         if user_data:
             return CloudUser(user_data)

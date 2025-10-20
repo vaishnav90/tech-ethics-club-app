@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Team - Tech & Ethics Club</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='5.7') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
 </head>
 <body>
     <div class="page">
-        <!-- Grid Background -->
+        
         <div class="grid-background"></div>
         
-        <!-- Header -->
+        
         <header class="header">
             <div class="header-left">
                 <h1 class="title">TECH & ETHICS CLUB</h1>
@@ -38,26 +39,31 @@
             </div>
         </header>
 
-        <!-- Navigation -->
+        
         <nav class="navigation">
             <div class="nav-container">
                 <a href="/" class="nav-button">
                     <span class="nav-text">HOME</span>
                 </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">TEAM</span>
+                </a>
                 <a href="/gallery" class="nav-button">
-                    <span class="nav-text">GALLERY</span>
+                    <span class="nav-text">PROJECTS</span>
                 </a>
                 <a href="/contact" class="nav-button">
                     <span class="nav-text">CONTACT US</span>
-                </a>
-                <a href="/team" class="nav-button">
-                    <span class="nav-text">OUR TEAM</span>
                 </a>
                 {% if current_user.is_authenticated %}
                     {% if current_user.is_admin %}
                         <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
                             <span class="nav-text">ADD ITEM</span>
                         </a>
+                    {% endif %}
+                    {% if current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
+                    <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">
+                        <span class="nav-text">ADD POST</span>
+                    </a>
                     {% endif %}
                     <a href="{{ url_for('logout') }}" class="nav-button auth-small">
                         <span class="nav-text">LOGOUT</span>
@@ -70,16 +76,44 @@
             </div>
         </nav>
 
-        <!-- Page Markers -->
+        
         <div class="page-marker left">TEAM</div>
         <div class="page-marker right">1.5</div>
 
-        <!-- Main Content -->
+        
         <main class="content team-page">
-            <!-- Team Members Row -->
+            
             <div class="team-members-container">
-                <!-- Christopher Ho Section -->
-                <section class="section blueprint-section team-member-section">
+                
+                <section class="section blueprint-section team-member-section vaishnav-section">
+                    <div class="section-header">
+                        <h2 class="section-title">VAISHNAV ANAND</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="team-member-content">
+                        <div class="member-image">
+                            <img src="{{ url_for('static', filename='imgs/headshot_athenian_optimized.jpg') }}" alt="Vaishnav Anand" class="member-photo">
+                        </div>
+                        <div class="member-info">
+                            <h3 class="member-role">President</h3>
+                            <p class="blueprint-text">
+                                Leading club development and our mission to build technology that positively impacts society. Passionate about ethical AI, with personal projects revolving around detecting AI fabricated media, and creating inclusive spaces for learning and collaboration. Vaishnav is currently writing a series of books intended to demystify technology, breaking down complex concepts into simple terms. 
+
+                            </p>
+                            <p class="blueprint-text">
+                                Fixates on facilitating strategic planning, community building, and organizing activities and events that align with our commitment to social impact and ethical technology development.
+                            </p>
+                            <div class="member-contact-buttons">
+                                <a href="https://www.linkedin.com/in/vaishnav-anand/" target="_blank" title="LinkedIn Profile" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 600;">
+                                    LINKEDIN
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                
+                <section class="section blueprint-section team-member-section chris-section">
                     <div class="section-header">
                         <h2 class="section-title">CHRISTOPHER HO</h2>
                         <div class="section-line"></div>
@@ -96,41 +130,49 @@
                             <p class="blueprint-text">
                                 Manages event logistics, coordinates with speakers and partners, and ensures our programs provide meaningful learning opportunities for all participants.
                             </p>
+                            <div class="member-contact-buttons">
+                                <a href="https://www.linkedin.com/in/christopher-ho-09a6a3352/" target="_blank" title="LinkedIn Profile" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 600;">
+                                    LINKEDIN
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Vaishnav Anand Section -->
-                <section class="section blueprint-section team-member-section">
+                <section class="section blueprint-section team-member-section asher-section">
                     <div class="section-header">
-                        <h2 class="section-title">VAISHNAV ANAND</h2>
+                        <h2 class="section-title">ASHER BURDENY</h2>
                         <div class="section-line"></div>
                     </div>
                     <div class="team-member-content">
                         <div class="member-image">
-                            <img src="{{ url_for('static', filename='imgs/headshot_athenian_optimized.jpg') }}" alt="Vaishnav Anand" class="member-photo">
+                            <img src="{{ url_for('static', filename='imgs/asherpic.png') }}" alt="Asher Burdeny" class="member-photo">
                         </div>
                         <div class="member-info">
-                            <h3 class="member-role">President</h3>
+                            <h3 class="member-role">Lead, Partnerships & Financial Operations</h3>
                             <p class="blueprint-text">
-                                Leading our mission to build technology that serves humanity. Passionate about ethical AI, responsible innovation, and creating inclusive spaces for learning and collaboration.
+                                Heading outreach and partnership organizations along with financial operations, Asher hosts a career-focused podcast, holds technical certifications in entrepreneurial business, and leads outreach at an ED-tech startup.
                             </p>
                             <p class="blueprint-text">
-                                Focuses on strategic planning, community building, and ensuring our activities align with our commitment to social impact and ethical technology development.
+                                Leads, financial workshops, financial management, Startup partnerships, and outreach.
                             </p>
+                            <div class="member-contact-buttons">
+                                <a href="https://www.linkedin.com/in/asherburdeny/" target="_blank" title="LinkedIn Profile" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 600;">
+                                    LINKEDIN
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </section>
-
-                <!-- Aditya Section -->
-                <section class="section blueprint-section team-member-section">
+                </section> 
+                
+                <section class="section blueprint-section team-member-section aditya-section">
                     <div class="section-header">
                         <h2 class="section-title">ADITYA BAKHANDI</h2>
                         <div class="section-line"></div>
                     </div>
                     <div class="team-member-content">
                         <div class="member-image">
-                            <div class="image-placeholder">IMAGE</div>
+                            <img src="{{ url_for('static', filename='imgs/adityapic_optimized.jpg') }}" alt="Aditya Bakhindi" class="member-photo">
                         </div>
                         <div class="member-info">
                             <h3 class="member-role">Lead Technical</h3>
@@ -140,20 +182,27 @@
                             <p class="blueprint-text">
                                 Leads technical workshops, mentors members on best practices, and ensures our projects demonstrate both technical sophistication and social responsibility.
                             </p>
+                            <div class="member-contact-buttons">
+                                <a href="https://www.linkedin.com/in/aditya-bakhandi-5a4468361/?trk=contact-info" target="_blank" title="LinkedIn Profile" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 600;">
+                                    LINKEDIN
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </section>
+
+                
             </div>
 
         </main>
 
-        <!-- Footer -->
+        
         <footer class="footer">
             <div class="footer-content">
                 <div class="footer-left">
                     <div class="footer-info">
-                        <span class="footer-label">GENERATED:</span>
-                        <span class="footer-value">2024-01-15</span>
+                        <span class="footer-label">DEVELOPED:</span>
+                        <span class="footer-value">2025-07-28</span>
                     </div>
                 </div>
                 <div class="footer-center">
@@ -199,11 +248,22 @@
             });
         }
 
+
+
         // Start animations when page loads
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 initAnimations();
             }, 1000);
+            
+            // Test if mailto protocol is supported
+            const testMailto = document.createElement('a');
+            testMailto.href = 'mailto:test@example.com';
+            const isMailtoSupported = testMailto.protocol === 'mailto:';
+            
+            if (!isMailtoSupported) {
+                console.log('Mailto protocol not supported by browser');
+            }
         });
     </script>
 </body>

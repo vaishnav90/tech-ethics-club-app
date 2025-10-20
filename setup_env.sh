@@ -1,14 +1,14 @@
 #!/bin/bash
-# Setup script to configure the environment for Cloud Storage access
 
 echo "🔧 Setting up environment for Cloud Storage access..."
 
-# Set the environment variable for the current session
 export GOOGLE_APPLICATION_CREDENTIALS="/Users/vaishnavanand/club2/tech-ethics-club-sa-key.json"
 
-echo "✅ Set GOOGLE_APPLICATION_CREDENTIALS to: $GOOGLE_APPLICATION_CREDENTIALS"
+export GMAIL_APP_PASSWORD="ppoe onud hlfu pace"
 
-# Verify the file exists
+echo "✅ Set GOOGLE_APPLICATION_CREDENTIALS to: $GOOGLE_APPLICATION_CREDENTIALS"
+echo "✅ Set GMAIL_APP_PASSWORD (update this with your actual app password)"
+
 if [ -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
     echo "✅ Service account key file exists"
 else
@@ -16,7 +16,6 @@ else
     exit 1
 fi
 
-# Test the configuration
 echo "🧪 Testing configuration..."
 python3 -c "
 import os
@@ -34,7 +33,6 @@ try:
     else:
         print('⚠️  Not using service account credentials')
         
-    # Test bucket access
     bucket = client.bucket('tech-ethics-club-uploads')
     if bucket.exists():
         print('✅ Can access Cloud Storage bucket')
@@ -48,8 +46,9 @@ except Exception as e:
 echo ""
 echo "🎉 Environment setup complete!"
 echo ""
-echo "📋 To make this permanent, add this line to your ~/.zshrc file:"
+echo "📋 To make this permanent, add these lines to your ~/.zshrc file:"
 echo "export GOOGLE_APPLICATION_CREDENTIALS=\"/Users/vaishnavanand/club2/tech-ethics-club-sa-key.json\""
+echo "export GMAIL_APP_PASSWORD=\"ppoe onud hlfu pace\""
 echo ""
 echo "🔗 Your app is running at: http://localhost:5001"
 echo "🌐 Your deployed app is at: https://techandethics.wl.r.appspot.com/"

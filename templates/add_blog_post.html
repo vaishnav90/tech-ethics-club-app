@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Blog Post - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.0') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+        
+        <div class="grid-background"></div>
+        
+        
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">PAGE:</span>
+                        <span class="value">ADD POST</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ADMIN</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">GALLERY</span>
+                </a>
+                <a href="/blog" class="nav-button">
+                    <span class="nav-text">BLOG</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">OUR TEAM</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                    {% endif %}
+                    {% if current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
+                    <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">
+                        <span class="nav-text">ADD POST</span>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        
+        <div class="page-marker left">ADD POST</div>
+        <div class="page-marker right">1.0</div>
+
+        
+        <main class="content add-blog-post-page">
+            
+            <section class="section blueprint-section add-blog-post-section">
+                <div class="section-header">
+                    <h2 class="section-title">ADD BLOG POST</h2>
+                    <div class="section-line"></div>
+                </div>
+                
+                <form class="blog-post-form" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="title" class="form-label">TITLE</label>
+                        <input type="text" id="title" name="title" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author_name" class="form-label">AUTHOR NAME</label>
+                        <input type="text" id="author_name" name="author_name" class="form-input" required placeholder="Enter the author's name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author_city" class="form-label">CITY (OPTIONAL)</label>
+                        <input type="text" id="author_city" name="author_city" class="form-input" placeholder="e.g., San Francisco, New York, London">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author_state" class="form-label">STATE/PROVINCE (OPTIONAL)</label>
+                        <input type="text" id="author_state" name="author_state" class="form-input" placeholder="e.g., California, New York, Ontario">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author_country" class="form-label">COUNTRY (OPTIONAL)</label>
+                        <input type="text" id="author_country" name="author_country" class="form-input" placeholder="e.g., United States, Canada, United Kingdom">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="author_school" class="form-label">SCHOOL (OPTIONAL)</label>
+                        <input type="text" id="author_school" name="author_school" class="form-input" placeholder="e.g., Stanford University, MIT, UC Berkeley">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">CONTENT</label>
+                        <div id="paragraphs-container">
+                            
+                            <div class="paragraph-section" data-paragraph-id="1">
+                                <div class="paragraph-header-row">
+                                    <input type="text" name="paragraph_headers[]" class="form-input paragraph-header" placeholder="Optional header (e.g., Introduction, Key Points, etc.)">
+                                    <button type="button" class="remove-paragraph-btn" onclick="removeParagraph(1)" style="display: none;">Remove</button>
+                                </div>
+                                <div class="paragraph-content-row">
+                                    <div class="paragraph-text-column">
+                                        <textarea name="paragraph_contents[]" class="form-textarea paragraph-content" rows="8" required placeholder="Write your paragraph content here..."></textarea>
+                                    </div>
+                                    <div class="paragraph-image-column">
+                                        <label class="image-upload-label">Add Image (Optional)</label>
+                                        <input type="file" name="paragraph_images[]" class="form-input image-upload" accept="image/*">
+                                        <input type="hidden" name="existing_image_urls[]" value="">
+                                        <div class="image-preview" id="image-preview-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="paragraph-actions">
+                            <button type="button" id="add-paragraph-btn" class="add-paragraph-btn">+ ADD PARAGRAPH</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">WORKS CITED</label>
+                        <div id="works-cited-container">
+                            
+                            <div class="works-cited-entry" data-entry-id="1">
+                                <div class="works-cited-row">
+                                    <input type="text" name="works_cited_titles[]" class="form-input works-cited-title" placeholder="Title of source">
+                                    <input type="url" name="works_cited_urls[]" class="form-input works-cited-url" placeholder="URL">
+                                    <input type="text" name="works_cited_authors[]" class="form-input works-cited-author" placeholder="Author (optional)">
+                                    <button type="button" class="remove-works-cited-btn" onclick="removeWorksCited(1)" style="display: none;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="works-cited-actions">
+                            <button type="button" id="add-works-cited-btn" class="add-works-cited-btn">+ ADD SOURCE</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags" class="form-label">TAGS (comma-separated)</label>
+                        <input type="text" id="tags" name="tags" class="form-input" placeholder="ethics, AI, technology, society">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="form-submit">PUBLISH POST</button>
+                        <a href="{{ url_for('blog') }}" class="cancel-btn">CANCEL</a>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">BETA-2.1</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">OPERATIONAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Intersection Observer for animations
+        function initAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all blueprint sections
+            document.querySelectorAll('.blueprint-section').forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Start animations when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                initAnimations();
+            }, 1000);
+            
+            // Initialize paragraph management
+            initParagraphManagement();
+        });
+        
+        // Paragraph management
+        let paragraphCounter = 1;
+        let worksCitedCounter = 1;
+        
+        function initParagraphManagement() {
+            document.getElementById('add-paragraph-btn').addEventListener('click', addParagraph);
+            document.getElementById('add-works-cited-btn').addEventListener('click', addWorksCited);
+            
+            // Add image preview functionality
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('image-upload')) {
+                    const file = e.target.files[0];
+                    const previewId = e.target.closest('.paragraph-section').querySelector('.image-preview').id;
+                    showImagePreview(file, previewId);
+                }
+            });
+        }
+        
+        function addParagraph() {
+            paragraphCounter++;
+            const container = document.getElementById('paragraphs-container');
+            
+            const paragraphSection = document.createElement('div');
+            paragraphSection.className = 'paragraph-section';
+            paragraphSection.setAttribute('data-paragraph-id', paragraphCounter);
+            
+            paragraphSection.innerHTML = `
+                <div class="paragraph-header-row">
+                    <input type="text" name="paragraph_headers[]" class="form-input paragraph-header" placeholder="Optional header (e.g., Introduction, Key Points, etc.)">
+                    <button type="button" class="remove-paragraph-btn" onclick="removeParagraph(${paragraphCounter})">Remove</button>
+                </div>
+                <div class="paragraph-content-row">
+                    <div class="paragraph-text-column">
+                        <textarea name="paragraph_contents[]" class="form-textarea paragraph-content" rows="8" required placeholder="Write your paragraph content here..."></textarea>
+                    </div>
+                    <div class="paragraph-image-column">
+                        <label class="image-upload-label">Add Image (Optional)</label>
+                        <input type="file" name="paragraph_images[]" class="form-input image-upload" accept="image/*">
+                        <input type="hidden" name="existing_image_urls[]" value="">
+                        <div class="image-preview" id="image-preview-${paragraphCounter}"></div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(paragraphSection);
+            
+            // Show remove button on first paragraph if there are multiple
+            if (paragraphCounter > 1) {
+                document.querySelector('.paragraph-section[data-paragraph-id="1"] .remove-paragraph-btn').style.display = 'inline-block';
+            }
+        }
+        
+        function removeParagraph(paragraphId) {
+            const paragraphSection = document.querySelector(`[data-paragraph-id="${paragraphId}"]`);
+            if (paragraphSection) {
+                paragraphSection.remove();
+                paragraphCounter--;
+                
+                // Hide remove button on first paragraph if only one remains
+                if (paragraphCounter === 1) {
+                    document.querySelector('.paragraph-section[data-paragraph-id="1"] .remove-paragraph-btn').style.display = 'none';
+                }
+            }
+        }
+        
+        function addWorksCited() {
+            worksCitedCounter++;
+            const container = document.getElementById('works-cited-container');
+            
+            const worksCitedEntry = document.createElement('div');
+            worksCitedEntry.className = 'works-cited-entry';
+            worksCitedEntry.setAttribute('data-entry-id', worksCitedCounter);
+            
+            worksCitedEntry.innerHTML = `
+                <div class="works-cited-row">
+                    <input type="text" name="works_cited_titles[]" class="form-input works-cited-title" placeholder="Title of source">
+                    <input type="url" name="works_cited_urls[]" class="form-input works-cited-url" placeholder="URL">
+                    <input type="text" name="works_cited_authors[]" class="form-input works-cited-author" placeholder="Author (optional)">
+                    <button type="button" class="remove-works-cited-btn" onclick="removeWorksCited(${worksCitedCounter})">Remove</button>
+                </div>
+            `;
+            
+            container.appendChild(worksCitedEntry);
+            
+            // Show remove button on first entry if there are multiple
+            if (worksCitedCounter > 1) {
+                document.querySelector('.works-cited-entry[data-entry-id="1"] .remove-works-cited-btn').style.display = 'inline-block';
+            }
+        }
+        
+        function removeWorksCited(entryId) {
+            const worksCitedEntry = document.querySelector(`[data-entry-id="${entryId}"]`);
+            if (worksCitedEntry) {
+                worksCitedEntry.remove();
+                worksCitedCounter--;
+                
+                // Hide remove button on first entry if only one remains
+                if (worksCitedCounter === 1) {
+                    document.querySelector('.works-cited-entry[data-entry-id="1"] .remove-works-cited-btn').style.display = 'none';
+                }
+            }
+        }
+        
+        function showImagePreview(file, previewId) {
+            const preview = document.getElementById(previewId);
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview" class="image-preview-img">
+                        <button type="button" class="remove-image-btn" onclick="removeImagePreview('${previewId}')">Remove</button>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+            }
+        }
+        
+        function removeImagePreview(previewId) {
+            const preview = document.getElementById(previewId);
+            const fileInput = preview.previousElementSibling;
+            preview.innerHTML = '';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html> 

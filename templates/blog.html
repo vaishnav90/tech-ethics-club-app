@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.1') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+        
+        <div class="grid-background"></div>
+        
+        
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">PAGE:</span>
+                        <span class="value">BLOG</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">TEAM</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">PROJECTS</span>
+                </a>
+                <a href="/blog" class="nav-button">
+                    <span class="nav-text">BLOG</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                        <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD POST</span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        
+        <div class="page-marker left">BLOG</div>
+        <div class="page-marker right">1.0</div>
+
+        
+        <main class="content blog-page">
+            
+            <section class="section blueprint-section blog-header-section compact">
+                <div class="section-header compact">
+                    <h2 class="section-title">BLOG</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="text-content compact">
+                    <p class="blueprint-text compact">
+                        Insights, thoughts, and discussions on technology, ethics, and much more.
+                    </p>
+                </div>
+            </section>
+
+            
+            {% if current_user.is_authenticated and current_user.is_admin %}
+            <section class="section blueprint-section admin-actions-section">
+                <div class="admin-actions-container">
+                    <div class="admin-actions-header">
+                        <h3 class="admin-actions-title">ADMIN ACTIONS</h3>
+                        <div class="admin-actions-line"></div>
+                    </div>
+                    <div class="admin-actions-buttons">
+                        <a href="{{ url_for('add_blog_post') }}" class="admin-action-btn primary">
+                            <span class="btn-icon">✏️</span>
+                            <span class="btn-text">ADD NEW POST</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            
+            <div class="search-section">
+                <div class="search-container">
+                    <form method="GET" action="{{ url_for('blog') }}" class="search-form" id="searchForm">
+                        <div class="search-input-group">
+                            <input type="text" name="search" id="searchInput" value="{{ request.args.get('search', '') }}" 
+                                   class="search-input" placeholder="Search everything: posts, titles, content, authors, tags..." autocomplete="off">
+                            <div class="search-dropdown" id="searchDropdown"></div>
+                        </div>
+                        <div class="search-filters">
+                            <select name="author_filter" id="authorFilter" class="filter-select">
+                                <option value="">All Authors</option>
+                                {% for author in all_authors %}
+                                <option value="{{ author }}" {{ 'selected' if request.args.get('author_filter') == author }}>
+                                    {{ author }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <select name="tag_filter" id="tagFilter" class="filter-select">
+                                <option value="">All Tags</option>
+                                {% for tag in all_tags %}
+                                <option value="{{ tag }}" {{ 'selected' if request.args.get('tag_filter') == tag }}>
+                                    {{ tag }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="search-options">
+                                <label class="search-option">
+                                    <input type="checkbox" name="search_content" id="searchContent" value="1" 
+                                           {{ 'checked' if request.args.get('search_content') }}> Include content
+                                </label>
+                                <label class="search-option">
+                                    <input type="checkbox" name="exact_match" id="exactMatch" value="1" 
+                                           {{ 'checked' if request.args.get('exact_match') }}> Exact match
+                                </label>
+                            </div>
+                            <button type="submit" class="search-btn">SEARCH</button>
+                        </div>
+                    </form>
+                    <div class="search-results-info" id="dynamicResultsInfo" style="display: none;">
+                        <span class="results-count" id="dynamicResultsCount">0 result(s) found</span>
+                        <button onclick="clearDynamicSearch()" class="clear-filters-btn">Clear Search</button>
+                    </div>
+                    {% if request.args.get('search') or request.args.get('author_filter') or request.args.get('tag_filter') %}
+                    <div class="search-results-info">
+                        <span class="results-count">{{ blog_posts|length }} result(s) found</span>
+                        <a href="{{ url_for('blog') }}" class="clear-filters-btn">Clear Search</a>
+                    </div>
+                    {% endif %}
+                    
+
+                </div>
+            </div>
+
+            
+            <div class="blog-posts-container">
+                {% if blog_posts %}
+                    {% for post in blog_posts %}
+                    <section class="section blueprint-section blog-post-card">
+                        <div class="blog-post-header">
+                            <h3 class="blog-post-title">
+                                <a href="{{ url_for('blog_post_by_slug', slug=post.slug) }}" class="blog-post-link">
+                                    {{ post.title }}
+                                </a>
+                            </h3>
+                            <div class="blog-post-meta">
+                                <span class="blog-post-date">{{ post.created_at.split('T')[0] }}</span>
+                                <span class="blog-post-author">By: {{ post.author_name }}</span>
+                                {% if post.author_city or post.author_state or post.author_country or post.author_school %}
+                                <div class="blog-post-location">
+                                    {% if post.author_city or post.author_state or post.author_country %}
+                                    <span class="location-info">
+                                        {% if post.author_city %}{{ post.author_city }}{% endif %}{% if post.author_city and post.author_state %}, {% endif %}{% if post.author_state %}{{ post.author_state }}{% endif %}{% if post.author_state and post.author_country %}, {% endif %}{% if post.author_country %}{{ post.author_country }}{% endif %}
+                                    </span>
+                                    {% endif %}
+                                    {% if post.author_school %}
+                                    <span class="school-info">{{ post.author_school }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if post.tags %}
+                                <div class="blog-post-tags">
+                                    {% for tag in post.tags %}
+                                    <span class="blog-tag">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="blog-post-preview">
+                            {% set preview_content = post.content[:300] %}
+                            {% if preview_content %}
+                                {% for paragraph in preview_content.split('\n\n') %}
+                                    {% if loop.index <= 2 %}
+                                        {% if paragraph.strip().startswith('#') or paragraph.strip().startswith('##') or paragraph.strip().startswith('###') %}
+                                            {% set header_text = paragraph.strip().lstrip('#').strip() %}
+                                            <div class="blog-post-preview-header">
+                                                <h4 class="blog-post-preview-subheader">{{ header_text }}</h4>
+                                            </div>
+                                        {% elif paragraph.strip().startswith('---') or paragraph.strip().startswith('***') %}
+                                            <div class="blog-post-preview-separator"></div>
+                                        {% elif paragraph.strip() %}
+                                            <p class="blueprint-text">
+                                                {{ paragraph.strip() }}{% if loop.last and post.content|length > 300 %}...{% endif %}
+                                            </p>
+                                        {% else %}
+                                            <div class="blog-post-preview-empty-line"></div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="blog-post-footer">
+                            <a href="{{ url_for('blog_post_by_slug', slug=post.slug) }}" class="read-more-btn">
+                                READ MORE
+                            </a>
+                            {% if current_user.is_authenticated and current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
+                            <div class="admin-controls">
+                                <a href="{{ url_for('edit_blog_post', post_id=post.id) }}" class="edit-btn">EDIT</a>
+                                <form method="POST" action="{{ url_for('delete_blog_post', post_id=post.id) }}" style="display: inline;" class="delete-form">
+                                    <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this blog post?')">DELETE</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                    {% endfor %}
+                {% else %}
+                    <section class="section blueprint-section no-posts-section">
+                        <div class="section-header">
+                            <h3 class="section-title">NO BLOG POSTS YET</h3>
+                            <div class="section-line"></div>
+                        </div>
+                        <div class="text-content">
+                            <p class="blueprint-text">
+                                No blog posts have been published yet. Check back soon for new content!
+                            </p>
+                            {% if current_user.is_authenticated and current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
+                            <div class="add-post-prompt">
+                                <a href="{{ url_for('add_blog_post') }}" class="add-post-btn">CREATE FIRST POST</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+            </div>
+        </main>
+
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <div class="footer-info">
+                        <span class="footer-label">GENERATED:</span>
+                        <span class="footer-value">2024-01-15</span>
+                    </div>
+                </div>
+                <div class="footer-center">
+                    <div class="footer-info">
+                        <span class="footer-label">REVISION:</span>
+                        <span class="footer-value">BETA-2.1</span>
+                    </div>
+                </div>
+                <div class="footer-right">
+                    <div class="footer-info">
+                        <span class="footer-label">STATUS:</span>
+                        <span class="footer-value">OPERATIONAL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-credits">
+                <span class="credits-text">
+                    Site made by: <strong>Vaishnav Anand</strong>
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Intersection Observer for animations
+        function initAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all blueprint sections
+            document.querySelectorAll('.blueprint-section').forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Start animations when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                initAnimations();
+            }, 1000);
+            
+            // Initialize dynamic search
+            initDynamicSearch();
+        });
+        
+        // Dynamic search functionality
+        let searchTimeout;
+        let allBlogPosts = {{ blog_posts | tojson | safe }};
+        
+        function initDynamicSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const authorFilter = document.getElementById('authorFilter');
+            const tagFilter = document.getElementById('tagFilter');
+            const searchContent = document.getElementById('searchContent');
+            const exactMatch = document.getElementById('exactMatch');
+            
+            // Add event listeners for real-time search
+            searchInput.addEventListener('input', performDynamicSearch);
+            authorFilter.addEventListener('change', performDynamicSearch);
+            tagFilter.addEventListener('change', performDynamicSearch);
+            searchContent.addEventListener('change', performDynamicSearch);
+            exactMatch.addEventListener('change', performDynamicSearch);
+        }
+        
+        function performDynamicSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchQuery = document.getElementById('searchInput').value.trim();
+                const authorFilter = document.getElementById('authorFilter').value;
+                const tagFilter = document.getElementById('tagFilter').value;
+                const searchContent = document.getElementById('searchContent').checked;
+                const exactMatch = document.getElementById('exactMatch').checked;
+                
+                if (!searchQuery && !authorFilter && !tagFilter) {
+                    // No filters applied, show all posts
+                    showAllPosts();
+                    hideDynamicResults();
+                    return;
+                }
+                
+                const filteredPosts = filterPosts(searchQuery, authorFilter, tagFilter, searchContent, exactMatch);
+                displayDynamicResults(filteredPosts);
+            }, 300); // 300ms delay for better performance
+        }
+        
+        function filterPosts(searchQuery, authorFilter, tagFilter, searchContent, exactMatch) {
+            return allBlogPosts.filter(post => {
+                let matches = true;
+                
+                // Filter by author
+                if (authorFilter && post.author_name !== authorFilter) {
+                    matches = false;
+                }
+                
+                // Filter by tag
+                if (tagFilter && (!post.tags || !post.tags.includes(tagFilter))) {
+                    matches = false;
+                }
+                
+                // Search in content
+                if (searchQuery) {
+                    const postTitle = post.title.toLowerCase();
+                    const postAuthor = post.author_name.toLowerCase();
+                    const postTags = post.tags ? post.tags.map(tag => tag.toLowerCase()) : [];
+                    const postContent = searchContent ? post.content.toLowerCase() : '';
+                    
+                    const searchTerms = searchQuery.toLowerCase().split(' ');
+                    
+                    if (exactMatch) {
+                        // Exact match: search query must be found in any field
+                        if (!(searchQuery.toLowerCase() in postTitle || 
+                              searchQuery.toLowerCase() in postContent || 
+                              searchQuery.toLowerCase() in postAuthor || 
+                              postTags.some(tag => searchQuery.toLowerCase() in tag))) {
+                            matches = false;
+                        }
+                    } else {
+                        // Word-based search: at least one word must be found in any field
+                        if (!searchTerms.some(word => 
+                            word in postTitle || 
+                            (searchContent && word in postContent) || 
+                            word in postAuthor || 
+                            postTags.some(tag => word in tag))) {
+                            matches = false;
+                        }
+                    }
+                }
+                
+                return matches;
+            });
+        }
+        
+        function displayDynamicResults(filteredPosts) {
+            const container = document.querySelector('.blog-posts-container');
+            const dynamicResultsInfo = document.getElementById('dynamicResultsInfo');
+            const dynamicResultsCount = document.getElementById('dynamicResultsCount');
+            
+            // Update results count
+            dynamicResultsCount.textContent = `${filteredPosts.length} result(s) found`;
+            
+            // Show dynamic results info
+            dynamicResultsInfo.style.display = 'flex';
+            
+            // Clear existing posts
+            container.innerHTML = '';
+            
+            if (filteredPosts.length === 0) {
+                // Show no results message
+                container.innerHTML = `
+                    <section class="section blueprint-section no-posts-section">
+                        <div class="section-header">
+                            <h3 class="section-title">NO RESULTS FOUND</h3>
+                            <div class="section-line"></div>
+                        </div>
+                        <div class="text-content">
+                            <p class="blueprint-text">
+                                No blog posts match your search criteria. Try adjusting your search terms or filters.
+                            </p>
+                        </div>
+                    </section>
+                `;
+            } else {
+                // Display filtered posts
+                filteredPosts.forEach(post => {
+                    const postElement = createPostElement(post);
+                    container.appendChild(postElement);
+                });
+            }
+            
+            // Reinitialize animations for new content
+            setTimeout(() => {
+                initAnimations();
+            }, 100);
+        }
+        
+        function createPostElement(post) {
+            const postSection = document.createElement('section');
+            postSection.className = 'section blueprint-section blog-post-card';
+            
+            // Create post content (similar to the template)
+            postSection.innerHTML = `
+                <div class="blog-post-header">
+                    <h3 class="blog-post-title">
+                        <a href="/blog/post/${post.slug}" class="blog-post-link">
+                            ${post.title}
+                        </a>
+                    </h3>
+                    <div class="blog-post-meta">
+                        <span class="blog-post-date">${post.created_at.split('T')[0]}</span>
+                        <span class="blog-post-author">By: ${post.author_name}</span>
+                        ${post.tags ? `
+                        <div class="blog-post-tags">
+                            ${post.tags.map(tag => `<span class="blog-tag">${tag}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="blog-post-preview">
+                    <p class="blueprint-text">
+                        ${post.content.substring(0, 200)}...
+                    </p>
+                </div>
+                <div class="blog-post-footer">
+                    <a href="/blog/post/${post.slug}" class="read-more-btn">
+                        READ MORE
+                    </a>
+                    ${post.author_email === '{{ current_user.email if current_user.is_authenticated else "" }}' ? `
+                    <div class="admin-controls">
+                        <a href="/edit-blog-post/${post.id}" class="edit-btn">EDIT</a>
+                        <form method="POST" action="/delete-blog-post/${post.id}" style="display: inline;" class="delete-form">
+                            <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this blog post?')">DELETE</button>
+                        </form>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            return postSection;
+        }
+        
+        function showAllPosts() {
+            const container = document.querySelector('.blog-posts-container');
+            container.innerHTML = '';
+            
+            // Recreate all posts from the original template
+            allBlogPosts.forEach(post => {
+                const postElement = createPostElement(post);
+                container.appendChild(postElement);
+            });
+            
+            // Reinitialize animations
+            setTimeout(() => {
+                initAnimations();
+            }, 100);
+        }
+        
+        function hideDynamicResults() {
+            const dynamicResultsInfo = document.getElementById('dynamicResultsInfo');
+            dynamicResultsInfo.style.display = 'none';
+        }
+        
+        function clearDynamicSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('authorFilter').value = '';
+            document.getElementById('tagFilter').value = '';
+            document.getElementById('searchContent').checked = false;
+            document.getElementById('exactMatch').checked = false;
+            
+            showAllPosts();
+            hideDynamicResults();
+        }
+        
+
+    </script>
+</body>
+</html> 

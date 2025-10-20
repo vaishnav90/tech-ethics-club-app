@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Gallery Item - Tech & Ethics Club</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.1') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="page">
-        <!-- Grid Background -->
+        
         <div class="grid-background"></div>
         
-        <!-- Header -->
+        
         <header class="header">
             <div class="header-left">
                 <h1 class="title">TECH & ETHICS CLUB</h1>
@@ -38,7 +38,7 @@
             </div>
         </header>
 
-        <!-- Navigation -->
+        
         <nav class="navigation">
             <div class="nav-container">
                 <a href="/" class="nav-button">
@@ -59,11 +59,11 @@
             </div>
         </nav>
 
-        <!-- Page Markers -->
+        
         <div class="page-marker left">ADMIN.002</div>
         <div class="page-marker right">3.0</div>
 
-        <!-- Main Content -->
+        
         <main class="content">
             <div class="admin-container">
                 <section class="section blueprint-section animate-in">
@@ -83,15 +83,64 @@
                             {% endif %}
                         {% endwith %}
                         
-                        <form method="POST" enctype="multipart/form-data" class="admin-form">
+                        <form method="POST" enctype="multipart/form-data" class="admin-form" id="galleryForm">
                             <div class="form-group">
                                 <label for="title" class="form-label">TITLE:</label>
                                 <input type="text" id="title" name="title" class="form-input" required>
                             </div>
                             
+                            
                             <div class="form-group">
-                                <label for="creator_name" class="form-label">CREATOR NAME:</label>
-                                <input type="text" id="creator_name" name="creator_name" class="form-input" placeholder="Your name" required>
+                                <label class="form-label">CREATORS:</label>
+                                <div class="media-section">
+                                    <div id="creators-container">
+                                        <div class="creator-entry" data-creator-index="0">
+                                            <div class="form-group">
+                                                <label class="form-label">CREATOR 1 NAME:</label>
+                                                <input type="text" name="creator_names[]" class="form-input" placeholder="Creator's name" required>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">EMAIL (OPTIONAL):</label>
+                                                <input type="email" name="creator_emails[]" class="form-input" placeholder="creator@example.com">
+                                                <div class="file-info">For people who want to connect or ask questions</div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">LINKEDIN (OPTIONAL):</label>
+                                                <input type="url" name="creator_linkedins[]" class="form-input" placeholder="https://linkedin.com/in/creator">
+                                                <div class="file-info">LinkedIn profile URL for professional connections</div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">CITY (OPTIONAL):</label>
+                                                <input type="text" name="creator_cities[]" class="form-input" placeholder="e.g., San Francisco, New York, London">
+                                                <div class="file-info">The city where they're located</div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">STATE/PROVINCE (OPTIONAL):</label>
+                                                <input type="text" name="creator_states[]" class="form-input" placeholder="e.g., California, New York, Ontario">
+                                                <div class="file-info">The state or province where they're located</div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">COUNTRY (OPTIONAL):</label>
+                                                <input type="text" name="creator_countries[]" class="form-input" placeholder="e.g., United States, Canada, United Kingdom">
+                                                <div class="file-info">The country where they're located</div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label">SCHOOL (OPTIONAL):</label>
+                                                <input type="text" name="creator_schools[]" class="form-input" placeholder="e.g., Stanford University, MIT, UC Berkeley">
+                                                <div class="file-info">The school or university they attend</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-creator-btn" class="admin-button secondary" style="margin-top: 10px;">
+                                        <span class="button-text">+ ADD ANOTHER CREATOR</span>
+                                    </button>
+                                </div>
                             </div>
                             
                             <div class="form-group">
@@ -99,21 +148,89 @@
                                 <textarea id="description" name="description" class="form-textarea" rows="4" required></textarea>
                             </div>
                             
+                            
+                            <div class="form-group">
+                                <label class="form-label">IMAGES (OPTIONAL):</label>
+                                <div class="media-section">
+                                    <div class="form-group">
+                                        <label for="thumbnail_image" class="form-label" id="thumbnail_label">MAIN IMAGE (OPTIONAL):</label>
+                                        <input type="file" id="thumbnail_image" name="thumbnail_image" class="form-file" accept="image/*">
+                                        <div class="file-info" id="thumbnail_info">Main image for your project (Max 15MB per file, will be automatically optimized)</div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">ADDITIONAL IMAGES (OPTIONAL):</label>
+                                        <div id="additional-images-container">
+                                            <div class="additional-image-entry" data-image-index="0">
+                                                <input type="file" name="additional_images[]" class="form-file" accept="image/*">
+                                                <div class="file-info">Additional image 1 (Max 15MB per file, will be automatically optimized)</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" id="add-image-btn" class="admin-button secondary" style="margin-top: 10px;">
+                                            <span class="button-text">+ ADD ANOTHER IMAGE</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            
+                            <div class="form-group">
+                                <label class="form-label">VIDEOS (OPTIONAL):</label>
+                                <div class="media-section">
+                                    <div id="videos-container">
+                                        <div class="video-entry" data-video-index="0">
+                                            <div class="form-group">
+                                                <label class="form-label">VIDEO 1:</label>
+                                                <input type="url" name="video_urls[]" class="form-input" placeholder="https://youtube.com/watch?v=... or https://drive.google.com/... or https://example.com/video.mp4">
+                                                <div class="file-info">Video URL (YouTube, Vimeo, Google Drive, or direct MP4/WebM/OGG file)</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">VIDEO TITLE (OPTIONAL):</label>
+                                                <input type="text" name="video_titles[]" class="form-input" placeholder="e.g., Project Demo, Tutorial Part 1">
+                                                <div class="file-info">Give your video a descriptive title</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">VIDEO THUMBNAIL (OPTIONAL):</label>
+                                                <input type="file" name="video_thumbnails[]" class="form-file" accept="image/*">
+                                                <div class="file-info">Custom thumbnail for this video (if not provided, platform thumbnail will be used)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-video-btn" class="admin-button secondary" style="margin-top: 10px;">
+                                        <span class="button-text">+ ADD ANOTHER VIDEO</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <div class="form-group">
                                 <label for="project_link" class="form-label">PROJECT LINK (OPTIONAL):</label>
                                 <input type="url" id="project_link" name="project_link" class="form-input" placeholder="https://example.com/project">
                                 <div class="file-info">Add a link to your project, portfolio, or related resource</div>
                             </div>
-                            
+
                             <div class="form-group">
-                                <label for="image" class="form-label">IMAGE:</label>
-                                <input type="file" id="image" name="image" class="form-file" accept="image/*" required>
-                                <div class="file-info">Accepted formats: JPG, PNG, GIF (Max 16MB)</div>
+                                <label for="course_id" class="form-label">COURSE ASSIGNMENT (OPTIONAL):</label>
+                                <select id="course_id" name="course_id" class="form-input">
+                                    <option value="">Select a course (optional)</option>
+                                    {% if courses %}
+                                        {% for course in courses %}
+                                            <option value="{{ course.id }}">{{ course.title }}{% if course.course_code %} ({{ course.course_code }}){% endif %}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <div class="file-info">Assign this project to a specific course</div>
                             </div>
                             
+                            <div class="form-group">
+                                <label for="tags" class="form-label">TAGS (OPTIONAL):</label>
+                                <input type="text" id="tags" name="tags" class="form-input" placeholder="computer science, robotics, AI, web development">
+                                <div class="file-info">Separate multiple tags with commas (e.g., computer science, robotics, AI)</div>
+                            </div>
+                            
+                            
                             <div class="form-actions">
-                                <button type="submit" class="admin-button">
-                                    <span class="button-text">ADD ITEM</span>
+                                <button type="submit" class="admin-button" id="submitButton">
+                                    <span class="button-text" id="buttonText">ADD ITEM</span>
                                 </button>
                                 <a href="{{ url_for('gallery') }}" class="admin-button secondary">
                                     <span class="button-text">CANCEL</span>
@@ -124,8 +241,201 @@
                 </section>
             </div>
         </main>
+        
+        <script>
+            // File size validation
+            const maxFileSize = 15 * 1024 * 1024; // 15MB in bytes
+            
+            function validateFileSize(input) {
+                const files = input.files;
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].size > maxFileSize) {
+                        alert(`File "${files[i].name}" is too large. Maximum file size is 15MB.`);
+                        input.value = ''; // Clear the input
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            // Additional Images management
+            let additionalImageIndex = 1;
+            
+            function addAdditionalImageEntry() {
+                const container = document.getElementById('additional-images-container');
+                const imageEntry = document.createElement('div');
+                imageEntry.className = 'additional-image-entry';
+                imageEntry.setAttribute('data-image-index', additionalImageIndex);
+                
+                imageEntry.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <input type="file" name="additional_images[]" class="form-file" accept="image/*" style="flex: 1;">
+                        <button type="button" class="remove-image-btn admin-button secondary" style="padding: 8px 12px; font-size: 0.8rem;">
+                            <span class="button-text">- REMOVE</span>
+                        </button>
+                    </div>
+                    <div class="file-info">Additional image ${additionalImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
+                `;
+                
+                container.appendChild(imageEntry);
+                additionalImageIndex++;
+                
+                // Add remove functionality
+                const removeBtn = imageEntry.querySelector('.remove-image-btn');
+                removeBtn.addEventListener('click', function() {
+                    imageEntry.remove();
+                });
+            }
+            
+            // Creator management
+            let creatorIndex = 1;
+            
+            function addCreatorEntry() {
+                const container = document.getElementById('creators-container');
+                const creatorEntry = document.createElement('div');
+                creatorEntry.className = 'creator-entry';
+                creatorEntry.setAttribute('data-creator-index', creatorIndex);
+                
+                creatorEntry.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">CREATOR ${creatorIndex + 1} NAME:</label>
+                        <input type="text" name="creator_names[]" class="form-input" placeholder="Creator's name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">EMAIL (OPTIONAL):</label>
+                        <input type="email" name="creator_emails[]" class="form-input" placeholder="creator@example.com">
+                        <div class="file-info">For people who want to connect or ask questions</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">LINKEDIN (OPTIONAL):</label>
+                        <input type="url" name="creator_linkedins[]" class="form-input" placeholder="https://linkedin.com/in/creator">
+                        <div class="file-info">LinkedIn profile URL for professional connections</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">CITY (OPTIONAL):</label>
+                        <input type="text" name="creator_cities[]" class="form-input" placeholder="e.g., San Francisco, New York, London">
+                        <div class="file-info">The city where they're located</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">STATE/PROVINCE (OPTIONAL):</label>
+                        <input type="text" name="creator_states[]" class="form-input" placeholder="e.g., California, New York, Ontario">
+                        <div class="file-info">The state or province where they're located</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">COUNTRY (OPTIONAL):</label>
+                        <input type="text" name="creator_countries[]" class="form-input" placeholder="e.g., United States, Canada, United Kingdom">
+                        <div class="file-info">The country where they're located</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">SCHOOL (OPTIONAL):</label>
+                        <input type="text" name="creator_schools[]" class="form-input" placeholder="e.g., Stanford University, MIT, UC Berkeley">
+                        <div class="file-info">The school or university they attend</div>
+                    </div>
+                    
+                    <button type="button" class="remove-creator-btn admin-button secondary" style="margin-top: 10px;">
+                        <span class="button-text">- REMOVE THIS CREATOR</span>
+                    </button>
+                `;
+                
+                container.appendChild(creatorEntry);
+                creatorIndex++;
+                
+                // Add remove functionality
+                const removeBtn = creatorEntry.querySelector('.remove-creator-btn');
+                removeBtn.addEventListener('click', function() {
+                    creatorEntry.remove();
+                });
+            }
+            
+            // Video management
+            let videoIndex = 1;
+            
+            function addVideoEntry() {
+                const container = document.getElementById('videos-container');
+                const videoEntry = document.createElement('div');
+                videoEntry.className = 'video-entry';
+                videoEntry.setAttribute('data-video-index', videoIndex);
+                
+                videoEntry.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">VIDEO ${videoIndex + 1}:</label>
+                        <input type="url" name="video_urls[]" class="form-input" placeholder="https://youtube.com/watch?v=... or https://drive.google.com/... or https://example.com/video.mp4">
+                        <div class="file-info">Video URL (YouTube, Vimeo, Google Drive, or direct MP4/WebM/OGG file)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">VIDEO TITLE (OPTIONAL):</label>
+                        <input type="text" name="video_titles[]" class="form-input" placeholder="e.g., Project Demo, Tutorial Part ${videoIndex + 1}">
+                        <div class="file-info">Give your video a descriptive title</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">VIDEO THUMBNAIL (OPTIONAL):</label>
+                        <input type="file" name="video_thumbnails[]" class="form-file" accept="image/*">
+                        <div class="file-info">Custom thumbnail for this video (if not provided, platform thumbnail will be used)</div>
+                    </div>
+                    <button type="button" class="remove-video-btn admin-button secondary" style="margin-top: 10px;">
+                        <span class="button-text">- REMOVE THIS VIDEO</span>
+                    </button>
+                `;
+                
+                container.appendChild(videoEntry);
+                videoIndex++;
+                
+                // Add remove functionality
+                const removeBtn = videoEntry.querySelector('.remove-video-btn');
+                removeBtn.addEventListener('click', function() {
+                    videoEntry.remove();
+                });
+            }
+            
+            // Add event listeners
+            document.getElementById('add-image-btn').addEventListener('click', addAdditionalImageEntry);
+            document.getElementById('add-creator-btn').addEventListener('click', addCreatorEntry);
+            document.getElementById('add-video-btn').addEventListener('click', addVideoEntry);
+            
+            document.getElementById('thumbnail_image').addEventListener('change', function() {
+                validateFileSize(this);
+            });
+            
+            document.getElementById('additional_images').addEventListener('change', function() {
+                validateFileSize(this);
+            });
+            
+            
+            // Form submission progress indicator
+            document.getElementById('galleryForm').addEventListener('submit', function() {
+                const submitButton = document.getElementById('submitButton');
+                const buttonText = document.getElementById('buttonText');
+                
+                // Disable button and show progress
+                submitButton.disabled = true;
+                buttonText.textContent = 'OPTIMIZING & UPLOADING...';
+                submitButton.style.opacity = '0.7';
+                
+                // Update progress after 3 seconds
+                setTimeout(function() {
+                    if (submitButton.disabled) {
+                        buttonText.textContent = 'ALMOST DONE...';
+                    }
+                }, 3000);
+                
+                // Re-enable after 15 seconds if still on page (fallback)
+                setTimeout(function() {
+                    if (submitButton.disabled) {
+                        submitButton.disabled = false;
+                        buttonText.textContent = 'ADD ITEM';
+                        submitButton.style.opacity = '1';
+                    }
+                }, 15000);
+            });
+        </script>
 
-        <!-- Footer -->
+        
         <footer class="footer">
             <div class="footer-content">
                 <div class="footer-left">

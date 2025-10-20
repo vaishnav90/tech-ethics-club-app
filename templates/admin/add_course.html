@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Course - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">TEAM</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">PROJECTS</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">ADD NEW COURSE</h1>
+                <p class="page-subtitle">Create a new course to organize projects</p>
+            </div>
+
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            
+            <div class="form-container">
+                <form method="POST" enctype="multipart/form-data" class="admin-form">
+                    <div class="form-group">
+                        <label for="title" class="form-label">COURSE TITLE *</label>
+                        <input type="text" id="title" name="title" class="form-input" required 
+                               placeholder="e.g., Introduction to Artificial Intelligence">
+                        <div class="form-help">Enter the full course title</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course_code" class="form-label">COURSE CODE (OPTIONAL)</label>
+                        <input type="text" id="course_code" name="course_code" class="form-input" 
+                               placeholder="e.g., CS 101, AI-200">
+                        <div class="form-help">Enter the course code or identifier</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">COURSE DESCRIPTION *</label>
+                        <textarea id="description" name="description" class="form-textarea" rows="6" required 
+                                  placeholder="Describe the course content, objectives, and what students will learn..."></textarea>
+                        <div class="form-help">Provide a detailed description of the course</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instructor" class="form-label">INSTRUCTOR (OPTIONAL)</label>
+                        <input type="text" id="instructor" name="instructor" class="form-input" 
+                               placeholder="e.g., Dr. Jane Smith">
+                        <div class="form-help">Enter the instructor's name</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="semester" class="form-label">SEMESTER (OPTIONAL)</label>
+                        <input type="text" id="semester" name="semester" class="form-input" 
+                               placeholder="e.g., Fall 2024, Spring 2025">
+                        <div class="form-help">Enter the semester or term</div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="admin-button primary">
+                            <span class="button-text">CREATE COURSE</span>
+                        </button>
+                        <a href="{{ url_for('gallery') }}" class="admin-button secondary">
+                            <span class="button-text">CANCEL</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.admin-form');
+            const titleInput = document.getElementById('title');
+            const descriptionInput = document.getElementById('description');
+
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+
+                // Validate title
+                if (!titleInput.value.trim()) {
+                    titleInput.style.borderColor = '#dc3545';
+                    isValid = false;
+                } else {
+                    titleInput.style.borderColor = '';
+                }
+
+                // Validate description
+                if (!descriptionInput.value.trim()) {
+                    descriptionInput.style.borderColor = '#dc3545';
+                    isValid = false;
+                } else {
+                    descriptionInput.style.borderColor = '';
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields.');
+                }
+            });
+
+            // Clear error styling on input
+            [titleInput, descriptionInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    this.style.borderColor = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
