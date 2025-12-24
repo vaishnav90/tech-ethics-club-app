@@ -160,23 +160,90 @@
             {% endif %}
 
             
-            {% if courses %}
-                <div class="course-filter">
-                    <form method="GET" action="{{ url_for('gallery') }}">
-                        <label for="course_filter" style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--blueprint-blue);">Filter by Course:</label>
-                        <select name="course" id="course_filter" onchange="this.form.submit()">
-                            <option value="">All Projects</option>
-                            {% for course in courses %}
-                                <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
-                                    {{ course.title }}{% if course.course_code %} ({{ course.course_code }}){% endif %}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </form>
+            <div id="course-selection-view" class="course-selection-view">
+                <div class="course-selection-header">
+                    <h2 class="section-title" style="text-align: center; color: var(--blueprint-blue); margin-bottom: 20px; font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 700;">SELECT A COURSE</h2>
+                    <p style="text-align: center; color: var(--blueprint-text); margin-bottom: 40px; font-size: 16px;">Choose a course to view its projects, or browse individual projects</p>
                 </div>
-            {% endif %}
+                
+                <div class="course-buttons-grid">
+                    {% for course in courses %}
+                        {% set course_projects = [] %}
+                        {% for item in gallery_items %}
+                            {% if item.course_id == course.id %}
+                                {% set _ = course_projects.append(item) %}
+                            {% endif %}
+                        {% endfor %}
+                        <button class="course-button" 
+                                data-course-id="{{ course.id }}" 
+                                data-course-title="{{ course.title }}"
+                                data-course-code="{{ course.course_code or '' }}"
+                                data-course-description="{{ course.description or '' }}"
+                                data-course-instructor="{{ course.instructor or '' }}"
+                                data-course-semester="{{ course.semester or '' }}"
+                                onclick="showCourseProjects('{{ course.id }}')">
+                            <div class="course-button-content">
+                                <h3 class="course-button-title">{{ course.title }}</h3>
+                                {% if course.course_code %}
+                                    <span class="course-button-code">{{ course.course_code }}</span>
+                                {% endif %}
+                                <div class="course-button-count">{{ course_projects|length }} project{{ 's' if course_projects|length != 1 else '' }}</div>
+                                {% if course.description %}
+                                    <p class="course-button-description">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+                                {% endif %}
+                            </div>
+                            <div class="course-button-arrow">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </button>
+                    {% endfor %}
+                    
+                    {% set uncategorized_count = [] %}
+                    {% for item in gallery_items %}
+                        {% if not item.course_id %}
+                            {% set _ = uncategorized_count.append(item) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if uncategorized_count|length > 0 %}
+                        <button class="course-button individual-projects-button" data-course-id="individual" onclick="showCourseProjects('individual')">
+                            <div class="course-button-content">
+                                <h3 class="course-button-title">Individual Projects</h3>
+                                <span class="course-button-code">No Course Assignment</span>
+                                <div class="course-button-count">{{ uncategorized_count|length }} project{{ 's' if uncategorized_count|length != 1 else '' }}</div>
+                                <p class="course-button-description">Projects not assigned to any specific course</p>
+                            </div>
+                            <div class="course-button-arrow">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div id="projects-view" class="projects-view" style="display: none;">
+                <div class="projects-view-header">
+                    <button class="back-to-courses-btn" onclick="showCourseSelection()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>BACK TO COURSES</span>
+                    </button>
+                    <div class="course-info-header">
+                        <h2 id="selected-course-title" class="section-title" style="color: var(--blueprint-blue); font-family: 'Orbitron', monospace; font-size: 24px; font-weight: 700; margin-bottom: 10px;"></h2>
+                        <div id="course-assignment-info" class="course-assignment-info"></div>
+                    </div>
+                </div>
+                
+                <div id="projects-container" class="gallery-container"></div>
+            </div>
 
             
+            <div id="all-projects-data" style="display: none;">
             {% if not selected_course and courses %}
                 
                 {% for course in courses %}
@@ -218,6 +285,8 @@
                             <div class="gallery-container course-gallery">
                                 {% for item in course_projects %}
                         <div class="gallery-item" 
+                             data-course-id="{{ course.id }}"
+                             data-item-id="{{ item.id }}"
                              data-title="{{ item.title|lower }}" 
                              data-creator="{{ item.creator_name|lower if item.creator_name else '' }}" 
                              data-description="{{ item.description|lower }}"
@@ -388,6 +457,8 @@
                         <div class="gallery-container course-gallery">
                             {% for item in uncategorized_projects %}
                                 <div class="gallery-item" 
+                                     data-course-id="individual"
+                                     data-item-id="{{ item.id }}"
                                      data-title="{{ item.title|lower }}" 
                                      data-creator="{{ item.creator_name|lower if item.creator_name else '' }}" 
                                      data-description="{{ item.description|lower }}"
@@ -539,10 +610,12 @@
                 
             {% else %}
                 
-                <div class="gallery-container">
+                <div class="gallery-container all-projects-container">
                     {% if gallery_items %}
                         {% for item in gallery_items %}
                             <div class="gallery-item" 
+                                 data-course-id="{{ item.course_id if item.course_id else 'individual' }}"
+                                 data-item-id="{{ item.id }}"
                                  data-title="{{ item.title|lower }}" 
                                  data-creator="{{ item.creator_name|lower if item.creator_name else '' }}" 
                                  data-description="{{ item.description|lower }}"
@@ -1058,6 +1131,437 @@
             // Initial update
             updateSelectedCount();
         });
+        
+        // Course Selection Functionality
+        window.projectsByCourse = {};
+        window.allProjectsHTML = [];
+        
+        function extractAllProjects() {
+            const allProjectsData = document.getElementById('all-projects-data');
+            if (allProjectsData) {
+                const projectItems = allProjectsData.querySelectorAll('.gallery-item');
+                projectItems.forEach(item => {
+                    const courseId = item.getAttribute('data-course-id') || 'individual';
+                    const itemId = item.getAttribute('data-item-id');
+                    if (!window.projectsByCourse[courseId]) {
+                        window.projectsByCourse[courseId] = [];
+                    }
+                    const cloned = item.cloneNode(true);
+                    window.projectsByCourse[courseId].push(cloned);
+                    window.allProjectsHTML.push(cloned);
+                });
+            }
+            
+            document.querySelectorAll('.course-section .gallery-item, .all-projects-container .gallery-item').forEach(item => {
+                const courseId = item.getAttribute('data-course-id') || 'individual';
+                const itemId = item.getAttribute('data-item-id');
+                if (!window.projectsByCourse[courseId]) {
+                    window.projectsByCourse[courseId] = [];
+                }
+                if (!window.projectsByCourse[courseId].some(p => p.getAttribute('data-item-id') === itemId)) {
+                    const cloned = item.cloneNode(true);
+                    window.projectsByCourse[courseId].push(cloned);
+                    if (!window.allProjectsHTML.some(p => p.getAttribute('data-item-id') === itemId)) {
+                        window.allProjectsHTML.push(cloned);
+                    }
+                }
+            });
+        }
+        
+        function showCourseSelection() {
+            const courseSelectionView = document.getElementById('course-selection-view');
+            const projectsView = document.getElementById('projects-view');
+            if (courseSelectionView) courseSelectionView.style.display = 'block';
+            if (projectsView) projectsView.style.display = 'none';
+        }
+        
+        window.showCourseProjects = function(courseId) {
+            const courseSelectionView = document.getElementById('course-selection-view');
+            const projectsView = document.getElementById('projects-view');
+            const projectsContainer = document.getElementById('projects-container');
+            const selectedCourseTitle = document.getElementById('selected-course-title');
+            const courseAssignmentInfo = document.getElementById('course-assignment-info');
+            
+            if (courseSelectionView) courseSelectionView.style.display = 'none';
+            if (projectsView) projectsView.style.display = 'block';
+            if (projectsContainer) projectsContainer.innerHTML = '';
+            
+            let courseName = 'Individual Projects';
+            let courseCode = '';
+            let courseDescription = '';
+            let courseInstructor = '';
+            let courseSemester = '';
+            
+            if (courseId !== 'individual') {
+                const courseButton = document.querySelector(`.course-button[data-course-id="${courseId}"]`);
+                if (courseButton) {
+                    courseName = courseButton.getAttribute('data-course-title') || courseName;
+                    courseCode = courseButton.getAttribute('data-course-code') || '';
+                    courseDescription = courseButton.getAttribute('data-course-description') || '';
+                    courseInstructor = courseButton.getAttribute('data-course-instructor') || '';
+                    courseSemester = courseButton.getAttribute('data-course-semester') || '';
+                }
+            }
+            
+            if (selectedCourseTitle) selectedCourseTitle.textContent = courseName;
+            
+            if (courseAssignmentInfo) {
+                if (courseId === 'individual') {
+                    courseAssignmentInfo.innerHTML = '<div class="assignment-badge">No Course Assignment</div>';
+                } else {
+                    let infoHTML = '<div class="course-assignment-details">';
+                    if (courseCode) {
+                        infoHTML += `<div class="assignment-item"><span class="assignment-label">COURSE CODE:</span> <span class="assignment-value">${courseCode}</span></div>`;
+                    }
+                    if (courseInstructor) {
+                        infoHTML += `<div class="assignment-item"><span class="assignment-label">INSTRUCTOR:</span> <span class="assignment-value">${courseInstructor}</span></div>`;
+                    }
+                    if (courseSemester) {
+                        infoHTML += `<div class="assignment-item"><span class="assignment-label">SEMESTER:</span> <span class="assignment-value">${courseSemester}</span></div>`;
+                    }
+                    if (courseDescription) {
+                        infoHTML += `<div class="assignment-description"><span class="assignment-label">DESCRIPTION:</span> <span class="assignment-value">${courseDescription}</span></div>`;
+                    }
+                    infoHTML += '</div>';
+                    courseAssignmentInfo.innerHTML = infoHTML;
+                }
+            }
+            
+            const projects = window.projectsByCourse[courseId] || [];
+            
+            if (projects.length === 0) {
+                if (projectsContainer) {
+                    projectsContainer.innerHTML = '<div class="empty-gallery" style="text-align: center; padding: 60px 20px;"><p class="blueprint-text" style="font-size: 18px; color: var(--blueprint-text);">No projects found for this course.</p></div>';
+                }
+                return;
+            }
+            
+            projects.forEach((project, index) => {
+                setTimeout(() => {
+                    if (projectsContainer) {
+                        const projectClone = project.cloneNode(true);
+                        
+                        if (courseId !== 'individual') {
+                            const projectContent = projectClone.querySelector('.gallery-description');
+                            if (projectContent) {
+                                const courseBadge = document.createElement('div');
+                                courseBadge.className = 'course-assignment-badge';
+                                courseBadge.innerHTML = `
+                                    <span class="badge-text">ASSIGNED TO: ${courseName}${courseCode ? ` (${courseCode})` : ''}</span>
+                                `;
+                                const firstChild = projectContent.firstElementChild;
+                                if (firstChild) {
+                                    projectContent.insertBefore(courseBadge, firstChild);
+                                } else {
+                                    projectContent.appendChild(courseBadge);
+                                }
+                            }
+                        } else {
+                            const projectContent = projectClone.querySelector('.gallery-description');
+                            if (projectContent) {
+                                const courseBadge = document.createElement('div');
+                                courseBadge.className = 'course-assignment-badge individual-badge';
+                                courseBadge.innerHTML = `
+                                    <span class="badge-text">INDIVIDUAL PROJECT (No Course Assignment)</span>
+                                `;
+                                const firstChild = projectContent.firstElementChild;
+                                if (firstChild) {
+                                    projectContent.insertBefore(courseBadge, firstChild);
+                                } else {
+                                    projectContent.appendChild(courseBadge);
+                                }
+                            }
+                            
+                            const mediaIndicators = projectClone.querySelectorAll('.media-type-indicators, .video-indicator');
+                            mediaIndicators.forEach(indicator => {
+                                if (indicator) indicator.remove();
+                            });
+                        }
+                        
+                        projectsContainer.appendChild(projectClone);
+                        projectClone.style.display = 'flex';
+                        projectClone.classList.add('animate-in');
+                    }
+                }, index * 50);
+            });
+            
+            setTimeout(() => {
+                const galleryItems = projectsContainer.querySelectorAll('.gallery-item');
+                if (window.performSearch) {
+                    window.performSearch();
+                }
+            }, projects.length * 50 + 100);
+        };
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            extractAllProjects();
+            
+            document.querySelectorAll('.course-section, .all-projects-container').forEach(el => {
+                if (el) el.style.display = 'none';
+            });
+            
+            const courseSelectionView = document.getElementById('course-selection-view');
+            if (courseSelectionView) {
+                courseSelectionView.style.display = 'block';
+            }
+        });
     </script>
+    
+    <style>
+        .course-selection-view {
+            padding: 40px 20px;
+        }
+        
+        .course-selection-header {
+            margin-bottom: 50px;
+        }
+        
+        .course-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .course-button {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid var(--blueprint-blue);
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 255, 0.1);
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .course-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 255, 0.2);
+            border-color: var(--blueprint-light-blue);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .course-button-content {
+            flex: 1;
+        }
+        
+        .course-button-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blueprint-blue);
+            margin-bottom: 8px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .course-button-code {
+            display: inline-block;
+            background: rgba(0, 0, 255, 0.1);
+            color: var(--blueprint-dark-blue);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .course-button-count {
+            color: var(--blueprint-text);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .course-button-description {
+            color: var(--blueprint-text);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+        
+        .course-button-arrow {
+            color: var(--blueprint-blue);
+            margin-left: 15px;
+            transition: transform 0.3s ease;
+        }
+        
+        .course-button:hover .course-button-arrow {
+            transform: translateX(5px);
+        }
+        
+        .individual-projects-button {
+            border-color: var(--blueprint-light-blue);
+            background: linear-gradient(135deg, rgba(65, 105, 225, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%);
+        }
+        
+        .individual-projects-button:hover {
+            border-color: var(--blueprint-blue);
+        }
+        
+        .projects-view-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            border: 2px solid var(--blueprint-blue);
+        }
+        
+        .course-info-header {
+            flex: 1;
+        }
+        
+        .course-assignment-info {
+            margin-top: 15px;
+        }
+        
+        .course-assignment-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .assignment-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: rgba(0, 0, 255, 0.05);
+            border: 1px solid rgba(0, 0, 255, 0.2);
+            border-radius: 6px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .assignment-label {
+            font-weight: 700;
+            color: var(--blueprint-blue);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .assignment-value {
+            color: var(--blueprint-text);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .assignment-description {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 15px;
+            background: rgba(0, 0, 255, 0.03);
+            border: 1px solid rgba(0, 0, 255, 0.15);
+            border-radius: 6px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .assignment-description .assignment-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .assignment-description .assignment-value {
+            display: block;
+            line-height: 1.6;
+            color: var(--blueprint-text);
+        }
+        
+        .assignment-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            background: rgba(65, 105, 225, 0.1);
+            border: 1px solid rgba(65, 105, 225, 0.3);
+            border-radius: 6px;
+            color: var(--blueprint-light-blue);
+            font-weight: 600;
+            font-size: 13px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .course-assignment-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 255, 0.08);
+            border: 2px solid var(--blueprint-blue);
+            border-radius: 8px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--blueprint-blue);
+            letter-spacing: 0.5px;
+        }
+        
+        .course-assignment-badge.individual-badge {
+            background: rgba(65, 105, 225, 0.08);
+            border-color: var(--blueprint-light-blue);
+            color: var(--blueprint-light-blue);
+        }
+        
+        .course-assignment-badge .badge-text {
+            flex: 1;
+        }
+        
+        .back-to-courses-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--blueprint-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .back-to-courses-btn:hover {
+            background: var(--blueprint-dark-blue);
+            transform: translateX(-3px);
+        }
+        
+        .back-to-courses-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        #selected-course-title {
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .course-buttons-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .course-button {
+                padding: 20px;
+            }
+            
+            .projects-view-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </body>
 </html> 
