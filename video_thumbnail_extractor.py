@@ -109,8 +109,8 @@ class VideoThumbnailExtractor:
         import re
         
         patterns = [
-            r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?
-            r'youtube\.com\/watch\?.*v=([^&\n?
+            r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
+            r'youtube\.com\/watch\?.*v=([^&\n?#]+)'
         ]
         
         for pattern in patterns:
@@ -138,7 +138,7 @@ class VideoThumbnailExtractor:
     
     def _create_generic_video_thumbnail(self, video_url: str) -> io.BytesIO:
         try:
-            img = Image.new('RGB', (800, 450), color='
+            img = Image.new('RGB', (800, 450), color='#1a1a1a')
             
             from PIL import ImageDraw, ImageFont
             
@@ -157,7 +157,7 @@ class VideoThumbnailExtractor:
                 (center_x - triangle_size//2, center_y + triangle_size),
                 (center_x + triangle_size, center_y)
             ]
-            draw.polygon(triangle_points, fill='
+            draw.polygon(triangle_points, fill='white')
             
             try:
                 font = ImageFont.load_default()

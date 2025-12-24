@@ -229,13 +229,7 @@ def logout():
 @app.route('/admin/gallery/add', methods=['GET', 'POST'])
 @login_required
 def add_gallery_item():
-    authorized_emails = [
-        'vaishnavanand90@gmail.com',
-        'chrisho2009@gmail.com',
-        'amazingadityab@gmail.com',
-        'asherburdeny@gmail.com'
-    ]
-    if current_user.email not in authorized_emails:
+    if not current_user.is_admin:
         flash('You do not have permission to add gallery items.', 'error')
         return redirect(url_for('gallery'))
     
@@ -648,12 +642,12 @@ def check_permissions():
         <style>
             body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }}
             .status {{ padding: 10px; margin: 10px 0; border-radius: 5px; }}
-            .good {{ background-color:
-            .bad {{ background-color:
-            .warning {{ background-color:
-            h2 {{ color:
+            .good {{ background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }}
+            .bad {{ background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }}
+            .warning {{ background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }}
+            h2 {{ color: #333; }}
             .logout-btn {{ 
-                background-color:
+                background-color: #007bff; 
                 color: white; 
                 padding: 10px 20px; 
                 border: none; 
@@ -663,7 +657,7 @@ def check_permissions():
                 display: inline-block;
                 margin-top: 20px;
             }}
-            .logout-btn:hover {{ background-color:
+            .logout-btn:hover {{ background-color: #0056b3; }}
         </style>
     </head>
     <body>
@@ -700,10 +694,17 @@ def check_permissions():
         
         <div style="margin-top: 30px;">
             <a href="/logout" class="logout-btn">🔄 Log Out and Log Back In</a>
-            <a href="/gallery" class="logout-btn" style="background-color:
+            <a href="/gallery" class="logout-btn" style="background-color: #28a745;">← Back to Gallery</a>
         </div>
     </body>
     </html>
+    """
+    
+    return permissions_info
+
+@app.route('/debug-cloud-storage')
+@login_required
+def debug_cloud_storage():
     if not current_user.is_admin:
         flash('Access denied.', 'error')
         return redirect(url_for('gallery'))
@@ -731,6 +732,21 @@ def check_permissions():
     <p><strong>Storage Bucket Env Var:</strong> {os.environ.get('STORAGE_BUCKET', 'Not set')}</p>
     <p><strong>Service Account (from app.yaml):</strong> tech-ethics-club-sa@techandethics.iam.gserviceaccount.com</p>
     <p><strong>Test Operation:</strong> {test_result}</p>
+    """
+    
+    if cloud_storage.client and cloud_storage.bucket:
+        try:
+            test_blobs = list(cloud_storage.bucket.list_blobs(max_results=1))
+            debug_info += f"<p><strong>Bucket Access Test:</strong> ✅ Success (found {len(test_blobs)} blobs)</p>"
+        except Exception as e:
+            debug_info += f"<p><strong>Bucket Access Test:</strong> ❌ Failed - {str(e)}</p>"
+    else:
+        debug_info += "<p><strong>Bucket Access Test:</strong> ❌ Cannot test - client/bucket not available</p>"
+    
+    return debug_info
+
+@app.route('/blog')
+def blog():
     search_query = request.args.get('search', '').strip()
     author_filter = request.args.get('author_filter', '').strip()
     tag_filter = request.args.get('tag_filter', '').strip()
@@ -854,6 +870,24 @@ def debug_blog_storage():
         <p><strong>Environment:</strong> {'Production' if os.environ.get('GAE_ENV') else 'Local Development'}</p>
         <p><strong>Project ID:</strong> {os.environ.get('GOOGLE_CLOUD_PROJECT', 'Not set')}</p>
         <p><strong>Storage bucket env var:</strong> {os.environ.get('STORAGE_BUCKET', 'Not set')}</p>
+        """
+        
+        if posts:
+            debug_info += "<h3>Posts:</h3><ul>"
+            for post in posts:
+                debug_info += f"<li>{post.get('title', 'No title')} by {post.get('author_name', 'Unknown')}</li>"
+            debug_info += "</ul>"
+        else:
+            debug_info += "<p><em>No posts found</em></p>"
+            
+        return debug_info
+        
+    except Exception as e:
+        return f"<h2>Blog Storage Error</h2><p>Error: {str(e)}</p><p>Type: {type(e).__name__}</p>"
+
+@app.route('/add-blog-post', methods=['GET', 'POST'])
+@login_required
+def add_blog_post():
     print(f"DEBUG: add_blog_post route accessed by user: {current_user.email if current_user.is_authenticated else 'Not authenticated'}")
     
     authorized_emails = [
@@ -918,7 +952,7 @@ def debug_blog_storage():
                 image_marker = f"[IMAGE:{image_urls[i]}]" if i < len(image_urls) and image_urls[i] else ""
                 
                 if header:
-                    content_parts.append(f"
+                    content_parts.append(f"## {header}\n\n{content.strip()}\n{image_marker}")
                 else:
                     content_parts.append(f"{content.strip()}\n{image_marker}")
         
@@ -928,16 +962,7 @@ def debug_blog_storage():
         if tags:
             tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
         
-        works_cited_list = []
-        for i in range(len(works_cited_titles)):
-            if works_cited_titles[i].strip() and works_cited_urls[i].strip():
-                works_cited_list.append({
-                    'title': works_cited_titles[i].strip(),
-                    'url': works_cited_urls[i].strip(),
-                    'author': works_cited_authors[i].strip() if i < len(works_cited_authors) and works_cited_authors[i].strip() else ''
-                })
-        
-        new_post = blog_storage.add_blog_post(title, content, current_user.email, author_name, author_city, author_state, author_country, author_school, tag_list, works_cited_list)
+        new_post = blog_storage.add_blog_post(title, content, current_user.email, author_name, author_city, author_state, author_country, author_school, tag_list)
         
         if new_post:
             flash('Blog post published successfully!', 'success')
@@ -1018,7 +1043,7 @@ def edit_blog_post(post_id):
                 image_marker = f"[IMAGE:{image_urls[i]}]" if i < len(image_urls) and image_urls[i] else ""
                 
                 if header:
-                    content_parts.append(f"
+                    content_parts.append(f"## {header}\n\n{content.strip()}\n{image_marker}")
                 else:
                     content_parts.append(f"{content.strip()}\n{image_marker}")
         
@@ -1028,16 +1053,7 @@ def edit_blog_post(post_id):
         if tags:
             tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
         
-        works_cited_list = []
-        for i in range(len(works_cited_titles)):
-            if works_cited_titles[i].strip() and works_cited_urls[i].strip():
-                works_cited_list.append({
-                    'title': works_cited_titles[i].strip(),
-                    'url': works_cited_urls[i].strip(),
-                    'author': works_cited_authors[i].strip() if i < len(works_cited_authors) and works_cited_authors[i].strip() else ''
-                })
-        
-        updated_post = blog_storage.update_blog_post(post_id, title, content, author_name, author_city, author_state, author_country, author_school, tag_list, works_cited_list)
+        updated_post = blog_storage.update_blog_post(post_id, title, content, author_name, author_city, author_state, author_country, author_school, tag_list)
         
         if updated_post:
             flash('Blog post updated successfully!', 'success')
@@ -1095,6 +1111,124 @@ Message:
 
 ---
 This message was sent from the Tech & Ethics Club contact form.
+        """
+        
+        sender_email = "techandethicsclub@gmail.com"
+        recipient_email = "techandethicsclub@gmail.com"
+        
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+        msg['Subject'] = f"Contact Form: {subject} - {name}"
+        
+        msg.attach(MIMEText(email_body, 'plain'))
+        
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        
+        email_password = os.environ.get('GMAIL_APP_PASSWORD')
+        
+        if not email_password:
+            print("=" * 50)
+            print("CONTACT FORM SUBMISSION")
+            print("=" * 50)
+            print(f"From: {name} ({email})")
+            print(f"Subject: {subject}")
+            print(f"Message: {message}")
+            print("=" * 50)
+            print("Email would be sent to:", recipient_email)
+            print("=" * 50)
+            print("⚠️  GMAIL_APP_PASSWORD not set - email not sent")
+            print("=" * 50)
+            
+            flash('Thank you for your message! We will get back to you soon.', 'success')
+            return redirect(url_for('contact'))
+        
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(sender_email, email_password)
+            server.send_message(msg)
+            server.quit()
+            
+            print(f"✅ Contact form email sent successfully to {recipient_email}")
+            
+        except smtplib.SMTPAuthenticationError:
+            print("❌ SMTP Authentication failed - check Gmail App Password")
+            flash('There was an error sending your message. Please try again or contact us directly.', 'error')
+            return redirect(url_for('contact'))
+        except Exception as e:
+            print(f"❌ SMTP Error: {str(e)}")
+            flash('There was an error sending your message. Please try again or contact us directly.', 'error')
+            return redirect(url_for('contact'))
+        
+        flash('Thank you for your message! We will get back to you soon.', 'success')
+        return redirect(url_for('contact'))
+        
+    except Exception as e:
+        print(f"Error sending contact form email: {str(e)}")
+        flash('There was an error sending your message. Please try again or contact us directly.', 'error')
+        return redirect(url_for('contact'))
+
+class GalleryItem:
+    def __init__(self, item_data):
+        self.id = item_data.get('id')
+        self.title = item_data.get('title')
+        self.description = item_data.get('description')
+        self.image_filename = item_data.get('image_filename')
+        self.image_url = item_data.get('image_url')
+        self.additional_images = item_data.get('additional_images', [])
+        self.additional_filenames = item_data.get('additional_filenames', [])
+        self.project_link = item_data.get('project_link')
+        self.tags = item_data.get('tags', [])
+        self.videos = item_data.get('videos', [])
+        self.course_id = item_data.get('course_id')
+        self.created_by = item_data.get('created_by')
+        self.created_at = item_data.get('created_at')
+        
+        self.creators = item_data.get('creators', [])
+        
+        if self.creators and len(self.creators) > 0:
+            first_creator = self.creators[0]
+            self.creator_name = first_creator.get('name', '')
+            self.creator_email = first_creator.get('email', '')
+            self.creator_linkedin = first_creator.get('linkedin', '')
+            self.creator_city = first_creator.get('city', '')
+            self.creator_state = first_creator.get('state', '')
+            self.creator_country = first_creator.get('country', '')
+            self.creator_school = first_creator.get('school', '')
+        else:
+            self.creator_name = item_data.get('creator_name', '')
+            self.creator_email = item_data.get('creator_email', '')
+            self.creator_linkedin = item_data.get('creator_linkedin', '')
+            self.creator_city = item_data.get('creator_city', '')
+            self.creator_state = item_data.get('creator_state', '')
+            self.creator_country = item_data.get('creator_country', '')
+            self.creator_school = item_data.get('creator_school', '')
+            if self.creator_name:
+                self.creators = [{
+                    'name': self.creator_name,
+                    'email': self.creator_email,
+                    'linkedin': self.creator_linkedin,
+                    'city': self.creator_city,
+                    'state': self.creator_state,
+                    'country': self.creator_country,
+                    'school': self.creator_school
+                }]
+        
+        self.has_videos = len(self.videos) > 0
+        self.has_images = bool(self.image_url) or len(self.additional_images) > 0
+        self.is_mixed_media = self.has_videos and self.has_images
+        self.has_multiple_creators = len(self.creators) > 1
+
+ADMIN_EMAILS = [
+    'chrisho2009@gmail.com',
+    'amazingadityab@gmail.com',
+    'vaishnavanand90@gmail.com',
+    'asherburdeny@gmail.com'
+]
+
+def is_admin_email(email):
     return email in ADMIN_EMAILS
 
 if __name__ == '__main__':
