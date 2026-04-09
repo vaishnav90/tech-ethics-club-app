@@ -1,4 +1,10 @@
+"""
+Google Cloud Storage persistence for users, gallery JSON documents, courses, and uploads.
 
+Each gallery item is typically gallery/<id>.json plus files under a prefix for images.
+CloudStorageManager picks credentials: App Engine default, local service account JSON,
+or default ADC. See __init__ for bucket name (STORAGE_BUCKET env).
+"""
 
 import json
 import os
@@ -9,6 +15,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 class CloudStorageManager:
+    """Thin CRUD over GCS JSON blobs and file uploads for the app."""
+
     def __init__(self, bucket_name: str = None):
         self.bucket_name = bucket_name or os.environ.get('STORAGE_BUCKET', 'tech-ethics-club-uploads')
         
@@ -134,7 +142,7 @@ class CloudStorageManager:
         
         return final_id
 
-    def create_gallery_item(self, title: str, description: str, image_filename: str, image_url: str, created_by: str, creators: List[Dict] = None, creator_name: str = None, creator_email: str = None, creator_linkedin: str = None, creator_city: str = None, creator_state: str = None, creator_country: str = None, creator_school: str = None, project_link: str = None, tags: List[str] = None, additional_images: List[str] = None, additional_filenames: List[str] = None, videos: List[Dict] = None, course_id: str = None) -> Dict:
+    def create_gallery_item(self, title: str, description: str, image_filename: str, image_url: str, created_by: str, creators: List[Dict] = None, creator_name: str = None, creator_email: str = None, creator_linkedin: str = None, creator_city: str = None, creator_state: str = None, creator_country: str = None, creator_school: str = None, project_link: str = None, project_links: List[Dict] = None, image_link: str = None, project_poster_url: str = None, project_poster_link: str = None, project_poster_filename: str = None, additional_image_links: List[str] = None, tags: List[str] = None, additional_images: List[str] = None, additional_filenames: List[str] = None, videos: List[Dict] = None, course_id: str = None, slideshow_images: List[str] = None, slideshow_filenames: List[str] = None, slideshow_image_links: List[str] = None, slideshow_title: str = None) -> Dict:
         item_id = self._generate_title_based_id(title)
         
         if creators:
@@ -158,8 +166,13 @@ class CloudStorageManager:
             'description': description,
             'image_filename': image_filename,
             'image_url': image_url,
+            'image_link': image_link,  # Link for main image
+            'project_poster_url': project_poster_url,  # Project poster image URL
+            'project_poster_link': project_poster_link,  # Project poster link
+            'project_poster_filename': project_poster_filename,  # Project poster filename
             'additional_images': additional_images or [],
             'additional_filenames': additional_filenames or [],
+            'additional_image_links': additional_image_links or [],  # Links for additional images
             'creators': creators_list,
             'creator_name': creator_name,
             'creator_email': creator_email,
@@ -168,9 +181,14 @@ class CloudStorageManager:
             'creator_state': creator_state,
             'creator_country': creator_country,
             'creator_school': creator_school,
-            'project_link': project_link,
+            'project_link': project_link,  # Keep for backward compatibility
+            'project_links': project_links or [],  # New: list of project links with titles
             'tags': tags or [],
             'videos': videos or [],
+            'slideshow_images': slideshow_images or [],  # Slideshow images URLs
+            'slideshow_filenames': slideshow_filenames or [],  # Slideshow image filenames
+            'slideshow_image_links': slideshow_image_links or [],  # Links for slideshow images
+            'slideshow_title': slideshow_title,  # Slideshow title
             'course_id': course_id,
             'created_by': created_by,
             'created_at': datetime.utcnow().isoformat(),
@@ -199,7 +217,7 @@ class CloudStorageManager:
             item_data = self._load_json(item_file)
             if item_data and item_data.get('is_active', True):
                 items.append(item_data)
-        return sorted(items, key=lambda x: x['created_at'], reverse=True)
+        return sorted(items, key=lambda x: x.get('created_at', ''), reverse=False)
     
     def delete_gallery_item(self, item_id: str):
         try:
@@ -357,6 +375,11 @@ class CloudStorageManager:
                 return False
             
             item_data['course_id'] = course_id
+            # Remove tags when assigned to a course
+            if course_id:
+                if item_data.get('tags'):
+                    print(f"Removing tags from item {item_id} because it's being assigned to course {course_id}")
+                item_data['tags'] = []
             item_data['updated_at'] = datetime.utcnow().isoformat()
             
             self._save_json(f'gallery/{item_id}.json', item_data)

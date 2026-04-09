@@ -1,4 +1,17 @@
+"""
+Tech & Ethics Club — main Flask application.
 
+Sections worth knowing:
+  • Gallery / projects: routes under /gallery, admin upload at /admin/gallery/add,
+    data in Google Cloud Storage via cloud_storage (see cloud_storage.py).
+  • GalleryItem (below): view-model dict → attributes for templates.
+  • PDF: GalleryPDFGenerator for single-item and full-gallery exports.
+  • Video thumbnails: VideoThumbnailExtractor when saving gallery items with video URLs.
+  • Blog: separate blog_storage module; routes under /blog.
+
+Config: SECRET_KEY, STORAGE_BUCKET, optional GAE_ENV. Local GCS often uses
+tech-ethics-club-sa-key.json (see CloudStorageManager).
+"""
 
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -71,6 +84,7 @@ def index():
 
 @app.route('/gallery')
 def gallery():
+    """List all gallery items; optional ?course=<id> filters to one course."""
     course_filter = request.args.get('course', '').strip()
     
     gallery_items_data = cloud_storage.get_all_gallery_items()
@@ -86,6 +100,7 @@ def gallery():
 
 @app.route('/gallery/<item_id>')
 def gallery_item(item_id):
+    """Single project/course item page (templates/gallery_item.html)."""
     try:
         item_data = cloud_storage.get_gallery_item_by_id(item_id)
         if not item_data:
@@ -96,9 +111,22 @@ def gallery_item(item_id):
         
         print(f"Gallery item {item_id} image URL: {gallery_item.image_url}")
         print(f"Gallery item {item_id} additional images: {gallery_item.additional_images}")
+        print(f"Gallery item {item_id} additional images type: {type(gallery_item.additional_images)}")
+        print(f"Gallery item {item_id} additional images count: {len(gallery_item.additional_images) if isinstance(gallery_item.additional_images, (list, tuple)) else 'NOT_A_LIST'}")
+        if isinstance(gallery_item.additional_images, (list, tuple)) and len(gallery_item.additional_images) > 0:
+            for idx, img_url in enumerate(gallery_item.additional_images):
+                print(f"  Additional image {idx+1}: {img_url}")
+        print(f"Gallery item {item_id} main image_link: {gallery_item.image_link}")
+        print(f"Gallery item {item_id} additional_image_links: {gallery_item.additional_image_links}")
+        print(f"Gallery item {item_id} additional_image_links type: {type(gallery_item.additional_image_links)}")
+        print(f"Gallery item {item_id} additional_image_links count: {len(gallery_item.additional_image_links) if isinstance(gallery_item.additional_image_links, (list, tuple)) else 'NOT_A_LIST'}")
         print(f"Gallery item {item_id} additional filenames: {gallery_item.additional_filenames}")
-        print(f"Gallery item {item_id} raw data: {item_data}")
-        print(f"Gallery item {item_id} additional_images from raw data: {item_data.get('additional_images', 'NOT_FOUND')}")
+        print(f"Gallery item {item_id} has_images: {gallery_item.has_images}")
+        print(f"Gallery item {item_id} has_videos: {gallery_item.has_videos}")
+        print(f"Gallery item {item_id} additional filenames count: {len(gallery_item.additional_filenames) if isinstance(gallery_item.additional_filenames, (list, tuple)) else 'NOT_A_LIST'}")
+        print(f"Gallery item {item_id} raw data additional_images: {item_data.get('additional_images', 'NOT_FOUND')}")
+        print(f"Gallery item {item_id} raw data additional_images type: {type(item_data.get('additional_images', []))}")
+        print(f"Gallery item {item_id} raw data additional_images count: {len(item_data.get('additional_images', [])) if isinstance(item_data.get('additional_images', []), (list, tuple)) else 'NOT_A_LIST'}")
         
         return render_template('gallery_item.html', item=gallery_item)
     except Exception as e:
@@ -229,6 +257,7 @@ def logout():
 @app.route('/admin/gallery/add', methods=['GET', 'POST'])
 @login_required
 def add_gallery_item():
+    """Admin: create gallery item (images, videos, slideshow, poster, course link)."""
     if not current_user.is_admin:
         flash('You do not have permission to add gallery items.', 'error')
         return redirect(url_for('gallery'))
@@ -237,7 +266,23 @@ def add_gallery_item():
         print("Form submitted - processing POST request")
         title = request.form.get('title')
         description = request.form.get('description')
-        project_link = request.form.get('project_link')
+        
+        # Get multiple project links with titles
+        project_link_titles = request.form.getlist('project_link_titles[]')
+        project_link_urls = request.form.getlist('project_link_urls[]')
+        project_links = []
+        for i in range(len(project_link_titles)):
+            if project_link_titles[i].strip() and project_link_urls[i].strip():
+                project_links.append({
+                    'title': project_link_titles[i].strip(),
+                    'url': project_link_urls[i].strip()
+                })
+        
+        # Backward compatibility: check for old single project_link field
+        old_project_link = request.form.get('project_link', '').strip()
+        if old_project_link and not project_links:
+            project_links = [{'title': 'View Project', 'url': old_project_link}]
+        
         tags = request.form.get('tags', '').strip()
         
         course_id = request.form.get('course_id', '').strip()
@@ -247,10 +292,6 @@ def add_gallery_item():
         creator_names = request.form.getlist('creator_names[]')
         creator_emails = request.form.getlist('creator_emails[]')
         creator_linkedins = request.form.getlist('creator_linkedins[]')
-        creator_cities = request.form.getlist('creator_cities[]')
-        creator_states = request.form.getlist('creator_states[]')
-        creator_countries = request.form.getlist('creator_countries[]')
-        creator_schools = request.form.getlist('creator_schools[]')
         
         creators_list = []
         for i in range(len(creator_names)):
@@ -258,11 +299,7 @@ def add_gallery_item():
                 creators_list.append({
                     'name': creator_names[i].strip(),
                     'email': creator_emails[i].strip() if i < len(creator_emails) else '',
-                    'linkedin': creator_linkedins[i].strip() if i < len(creator_linkedins) else '',
-                    'city': creator_cities[i].strip() if i < len(creator_cities) else '',
-                    'state': creator_states[i].strip() if i < len(creator_states) else '',
-                    'country': creator_countries[i].strip() if i < len(creator_countries) else '',
-                    'school': creator_schools[i].strip() if i < len(creator_schools) else ''
+                    'linkedin': creator_linkedins[i].strip() if i < len(creator_linkedins) else ''
                 })
         
         creator_name = creators_list[0]['name'] if creators_list else ''
@@ -271,8 +308,20 @@ def add_gallery_item():
         video_titles = request.form.getlist('video_titles[]')
         video_thumbnail_files = request.files.getlist('video_thumbnails[]')
         
+        project_poster_file = request.files.get('project_poster')
+        project_poster_link = request.form.get('project_poster_link', '').strip()
         thumbnail_file = request.files.get('thumbnail_image')
-        additional_files = request.files.getlist('additional_images')
+        thumbnail_image_link = request.form.get('thumbnail_image_link', '').strip()
+        # Try with brackets first (matches form), fallback to without brackets
+        additional_files = request.files.getlist('additional_images[]')
+        if not additional_files or len(additional_files) == 0:
+            additional_files = request.files.getlist('additional_images')
+        additional_image_links = request.form.getlist('additional_image_links[]')
+        
+        # Get slideshow images
+        slideshow_files = request.files.getlist('slideshow_images[]')
+        slideshow_image_links = request.form.getlist('slideshow_image_links[]')
+        slideshow_title = request.form.get('slideshow_title', '').strip()
         
         print(f"Form data received:")
         print(f"  Title: '{title}'")
@@ -281,12 +330,16 @@ def add_gallery_item():
         print(f"  Video URLs: {video_urls}")
         print(f"  Video titles: {video_titles}")
         print(f"  Thumbnail file: {thumbnail_file.filename if thumbnail_file else 'None'}")
-        print(f"  Additional files: {len(additional_files)} files")
+        print(f"  Additional files (with []): {len(request.files.getlist('additional_images[]'))} files")
+        print(f"  Additional files (without []): {len(request.files.getlist('additional_images'))} files")
+        print(f"  Additional files (final): {len(additional_files)} files")
         for i, f in enumerate(additional_files):
-            print(f"    File {i+1}: {f.filename if f and f.filename else 'None'}")
+            print(f"    File {i+1}: {f.filename if f and f.filename else 'None/EMPTY'}")
             if f and f.filename:
                 print(f"      Content length: {f.content_length}")
                 print(f"      Content type: {f.content_type}")
+            else:
+                print(f"      File object exists: {f is not None}, but no filename")
         
         has_images = bool(thumbnail_file and thumbnail_file.filename)
         has_videos = any(url.strip() for url in video_urls)
@@ -310,6 +363,10 @@ def add_gallery_item():
         
         max_file_size = 15 * 1024 * 1024
         
+        if project_poster_file and project_poster_file.content_length and project_poster_file.content_length > max_file_size:
+            flash('Project poster is too large. Maximum file size is 15MB.', 'error')
+            return render_template('admin/add_gallery_item.html', courses=cloud_storage.get_all_courses())
+        
         if thumbnail_file and thumbnail_file.content_length and thumbnail_file.content_length > max_file_size:
             flash('Thumbnail image is too large. Maximum file size is 15MB.', 'error')
             return render_template('admin/add_gallery_item.html', courses=cloud_storage.get_all_courses())
@@ -319,10 +376,41 @@ def add_gallery_item():
                 flash(f'File "{additional_file.filename}" is too large. Maximum file size is 15MB.', 'error')
                 return render_template('admin/add_gallery_item.html', courses=cloud_storage.get_all_courses())
         
+        # Validate slideshow image file sizes
+        for slideshow_file in slideshow_files:
+            if slideshow_file and slideshow_file.filename and slideshow_file.content_length and slideshow_file.content_length > max_file_size:
+                flash(f'Slideshow image "{slideshow_file.filename}" is too large. Maximum file size is 15MB.', 'error')
+                return render_template('admin/add_gallery_item.html', courses=cloud_storage.get_all_courses())
+        
         try:
             print("Starting file upload process...")
             
+            # Process project poster first
+            project_poster_url = None
+            project_poster_link_value = None
+            project_poster_filename = None
+            if project_poster_file and project_poster_file.filename:
+                print(f"Processing project poster: {project_poster_file.filename}")
+                try:
+                    optimized_poster = image_optimizer.optimize_image(project_poster_file, project_poster_file.filename)
+                    project_poster_filename = image_optimizer.get_optimized_filename(project_poster_file.filename)
+                    
+                    print(f"Uploading project poster: {project_poster_filename}")
+                    project_poster_url = cloud_storage.upload_file(optimized_poster, project_poster_filename, 'uploads')
+                    if project_poster_url:
+                        project_poster_link_value = project_poster_link if project_poster_link else None
+                        print(f"Project poster uploaded successfully: {project_poster_url}")
+                        if project_poster_link_value:
+                            print(f"Project poster link: {project_poster_link_value}")
+                    else:
+                        print("Failed to upload project poster")
+                        flash('Warning: Failed to upload project poster. Continuing with other files.', 'warning')
+                except Exception as poster_error:
+                    print(f"Error uploading project poster: {str(poster_error)}")
+                    flash(f'Warning: Error uploading project poster: {str(poster_error)}. Continuing with other files.', 'warning')
+            
             thumbnail_url = None
+            thumbnail_image_link_value = None
             optimized_filename = None
             if has_images:
                 if not thumbnail_file or not thumbnail_file.filename:
@@ -346,6 +434,9 @@ def add_gallery_item():
                     flash(error_msg, 'error')
                     return render_template('admin/add_gallery_item.html', courses=cloud_storage.get_all_courses())
                 print(f"Thumbnail uploaded successfully: {thumbnail_url}")
+                thumbnail_image_link_value = thumbnail_image_link if thumbnail_image_link else None
+                if thumbnail_image_link_value:
+                    print(f"Thumbnail image link: {thumbnail_image_link_value}")
             
             videos_list = []
             if has_videos:
@@ -389,41 +480,134 @@ def add_gallery_item():
             
             additional_urls = []
             additional_filenames = []
-            print(f"Processing {len(additional_files)} additional files")
-            
-            for i, additional_file in enumerate(additional_files[:4]):
-                if additional_file and additional_file.filename:
-                    print(f"Optimizing additional file {i+1}: {additional_file.filename}")
-                    try:
-                        optimized_additional = image_optimizer.optimize_image(additional_file, additional_file.filename)
-                        optimized_additional_filename = image_optimizer.get_optimized_filename(additional_file.filename)
-                        
-                        print(f"Uploading optimized additional file: {optimized_additional_filename}")
-                        additional_url = cloud_storage.upload_file(optimized_additional, optimized_additional_filename, 'uploads')
-                        if additional_url:
-                            additional_urls.append(additional_url)
-                            additional_filenames.append(optimized_additional_filename)
-                            print(f"Successfully uploaded: {additional_url}")
-                        else:
-                            print(f"Failed to upload: {additional_file.filename}")
-                            warning_msg = f'Warning: Failed to upload additional image "{additional_file.filename}". '
-                            if cloud_storage.auth_error:
-                                warning_msg += 'This might be due to authentication issues.'
-                            else:
-                                warning_msg += 'Continuing with other files.'
-                            flash(warning_msg, 'warning')
-                    except Exception as upload_error:
-                        print(f"Error uploading {additional_file.filename}: {str(upload_error)}")
-                        flash(f'Warning: Error uploading "{additional_file.filename}": {str(upload_error)}. Continuing with other files.', 'warning')
+            additional_image_links_list = []
+            # Filter out empty file inputs - Flask includes empty file objects for unselected files
+            valid_additional_files = []
+            valid_file_indices = []
+            for i, additional_file in enumerate(additional_files):
+                if additional_file and hasattr(additional_file, 'filename') and additional_file.filename and additional_file.filename.strip():
+                    valid_additional_files.append(additional_file)
+                    valid_file_indices.append(i)
+                    print(f"Valid additional file {len(valid_additional_files)} (form index {i}): {additional_file.filename}")
                 else:
-                    print(f"Skipping file {i+1}: no filename or empty file")
+                    print(f"Skipping empty file input at index {i}")
+            
+            print(f"Processing {len(valid_additional_files)} valid additional files (out of {len(additional_files)} total file inputs)")
+            
+            for file_idx, additional_file in enumerate(valid_additional_files[:4]):
+                original_index = valid_file_indices[file_idx]
+                print(f"Processing additional file {file_idx + 1} (form index {original_index}): {additional_file.filename}")
+                try:
+                    optimized_additional = image_optimizer.optimize_image(additional_file, additional_file.filename)
+                    optimized_additional_filename = image_optimizer.get_optimized_filename(additional_file.filename)
+                    
+                    print(f"Uploading optimized additional file: {optimized_additional_filename}")
+                    additional_url = cloud_storage.upload_file(optimized_additional, optimized_additional_filename, 'uploads')
+                    if additional_url:
+                        additional_urls.append(additional_url)
+                        additional_filenames.append(optimized_additional_filename)
+                        
+                        # Get corresponding image link if provided (use original_index to match with form array)
+                        image_link = None
+                        if original_index < len(additional_image_links):
+                            link_value = additional_image_links[original_index]
+                            if link_value and link_value.strip():
+                                image_link = link_value.strip()
+                        additional_image_links_list.append(image_link)
+                        if image_link:
+                            print(f"Additional image {file_idx + 1} link: {image_link}")
+                        
+                        print(f"Successfully uploaded: {additional_url}")
+                    else:
+                        print(f"Failed to upload: {additional_file.filename}")
+                        warning_msg = f'Warning: Failed to upload additional image "{additional_file.filename}". '
+                        if cloud_storage.auth_error:
+                            warning_msg += 'This might be due to authentication issues.'
+                        else:
+                            warning_msg += 'Continuing with other files.'
+                        flash(warning_msg, 'warning')
+                except Exception as upload_error:
+                    print(f"Error uploading {additional_file.filename}: {str(upload_error)}")
+                    import traceback
+                    traceback.print_exc()
+                    flash(f'Warning: Error uploading "{additional_file.filename}": {str(upload_error)}. Continuing with other files.', 'warning')
             
             print(f"Final additional URLs: {additional_urls}")
+            print(f"Final additional URLs count: {len(additional_urls)}")
             print(f"Final additional filenames: {additional_filenames}")
+            print(f"Final additional filenames count: {len(additional_filenames)}")
+            print(f"Final additional image links: {additional_image_links_list}")
+            print(f"Final additional image links count: {len(additional_image_links_list)}")
             
+            # Verify all images were processed
+            if len(additional_urls) != len(additional_files):
+                print(f"WARNING: Mismatch! Processed {len(additional_urls)} URLs from {len(additional_files)} files")
+                for idx, f in enumerate(additional_files):
+                    print(f"  File {idx+1}: {f.filename if f and f.filename else 'EMPTY/NONE'}")
+            
+            # Process slideshow images
+            slideshow_urls = []
+            slideshow_filenames = []
+            slideshow_image_links_list = []
+            valid_slideshow_files = []
+            valid_slideshow_file_indices = []
+            for i, slideshow_file in enumerate(slideshow_files):
+                if slideshow_file and hasattr(slideshow_file, 'filename') and slideshow_file.filename and slideshow_file.filename.strip():
+                    valid_slideshow_files.append(slideshow_file)
+                    valid_slideshow_file_indices.append(i)
+                    print(f"Valid slideshow file {len(valid_slideshow_files)} (form index {i}): {slideshow_file.filename}")
+            
+            print(f"Processing {len(valid_slideshow_files)} valid slideshow files (out of {len(slideshow_files)} total file inputs)")
+            
+            for file_idx, slideshow_file in enumerate(valid_slideshow_files):
+                original_index = valid_slideshow_file_indices[file_idx]
+                print(f"Processing slideshow file {file_idx + 1} (form index {original_index}): {slideshow_file.filename}")
+                try:
+                    optimized_slideshow = image_optimizer.optimize_image(slideshow_file, slideshow_file.filename)
+                    optimized_slideshow_filename = image_optimizer.get_optimized_filename(slideshow_file.filename)
+                    
+                    print(f"Uploading optimized slideshow file: {optimized_slideshow_filename}")
+                    slideshow_url = cloud_storage.upload_file(optimized_slideshow, optimized_slideshow_filename, 'uploads')
+                    if slideshow_url:
+                        slideshow_urls.append(slideshow_url)
+                        slideshow_filenames.append(optimized_slideshow_filename)
+                        
+                        # Get corresponding image link if provided
+                        image_link = None
+                        if original_index < len(slideshow_image_links):
+                            link_value = slideshow_image_links[original_index]
+                            if link_value and link_value.strip():
+                                image_link = link_value.strip()
+                        slideshow_image_links_list.append(image_link)
+                        if image_link:
+                            print(f"Slideshow image {file_idx + 1} link: {image_link}")
+                        
+                        print(f"Successfully uploaded slideshow image: {slideshow_url}")
+                    else:
+                        print(f"Failed to upload slideshow image: {slideshow_file.filename}")
+                        warning_msg = f'Warning: Failed to upload slideshow image "{slideshow_file.filename}". '
+                        if cloud_storage.auth_error:
+                            warning_msg += 'This might be due to authentication issues.'
+                        else:
+                            warning_msg += 'Continuing with other files.'
+                        flash(warning_msg, 'warning')
+                except Exception as upload_error:
+                    print(f"Error uploading slideshow image {slideshow_file.filename}: {str(upload_error)}")
+                    import traceback
+                    traceback.print_exc()
+                    flash(f'Warning: Error uploading slideshow image "{slideshow_file.filename}": {str(upload_error)}. Continuing with other files.', 'warning')
+            
+            print(f"Final slideshow URLs: {slideshow_urls}")
+            print(f"Final slideshow URLs count: {len(slideshow_urls)}")
+            
+            # Only allow tags if not assigned to a course
             tag_list = []
-            if tags:
+            if tags and not course_id:
                 tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+            elif course_id and tags:
+                # Clear tags if course is assigned
+                tag_list = []
+                print("Tags cleared because project is assigned to a course")
             
             print("Creating gallery item in cloud storage...")
             gallery_item = cloud_storage.create_gallery_item(
@@ -431,11 +615,21 @@ def add_gallery_item():
             description=description,
             image_filename=optimized_filename,
             image_url=thumbnail_url,
+            image_link=thumbnail_image_link_value,  # Link for main image
+            project_poster_url=project_poster_url,  # Project poster image URL
+            project_poster_link=project_poster_link_value,  # Project poster link
+            project_poster_filename=project_poster_filename,  # Project poster filename
             additional_images=additional_urls,
             additional_filenames=additional_filenames,
+            additional_image_links=additional_image_links_list,  # Links for additional images
+            slideshow_images=slideshow_urls,  # Slideshow images URLs
+            slideshow_filenames=slideshow_filenames,  # Slideshow image filenames
+            slideshow_image_links=slideshow_image_links_list,  # Links for slideshow images
+            slideshow_title=slideshow_title if slideshow_title else None,  # Slideshow title
             creators=creators_list,
-            project_link=project_link,
-            tags=tag_list,
+            project_link=None,  # Keep for backward compatibility but use project_links
+            project_links=project_links,
+            tags=tag_list,  # Empty if course_id is set
             videos=videos_list,
             course_id=course_id,
             created_by=current_user.id
@@ -474,6 +668,7 @@ def add_gallery_item():
 @app.route('/admin/gallery/delete/<item_id>', methods=['POST'])
 @login_required
 def delete_gallery_item(item_id):
+    """Admin POST: remove item and associated blobs from storage."""
     if not current_user.is_admin:
         flash('You do not have permission to delete gallery items.', 'error')
         return redirect(url_for('gallery'))
@@ -499,6 +694,7 @@ def delete_gallery_item(item_id):
 @app.route('/admin/gallery/move-to-course', methods=['POST'])
 @login_required
 def move_gallery_item_to_course():
+    """Bulk-assign selected gallery items to a course (or uncategorized)."""
     if not current_user.is_admin:
         flash('You do not have permission to move gallery items.', 'error')
         return redirect(url_for('gallery'))
@@ -554,6 +750,7 @@ def move_gallery_item_to_course():
 
 @app.route('/gallery/<item_id>/pdf')
 def generate_gallery_item_pdf(item_id):
+    """Download one project as PDF (reportlab via pdf_generator)."""
     try:
         item_data = cloud_storage.get_gallery_item_by_id(item_id)
         if not item_data:
@@ -581,6 +778,7 @@ def generate_gallery_item_pdf(item_id):
 
 @app.route('/gallery/pdf')
 def generate_gallery_pdf():
+    """Download combined PDF of all gallery items."""
     try:
         gallery_items_data = cloud_storage.get_all_gallery_items()
         gallery_items = [GalleryItem(item) for item in gallery_items_data]
@@ -603,7 +801,8 @@ def generate_gallery_pdf():
                 'videos': item.videos,
                 'creators': item.creators,
                 'tags': item.tags,
-                'project_link': item.project_link
+                'project_link': item.project_link,  # Backward compatibility
+                'project_links': item.project_links  # New: multiple project links
             })
         
         success = pdf_generator.generate_gallery_pdf(items_data, temp_path)
@@ -1171,17 +1370,88 @@ This message was sent from the Tech & Ethics Club contact form.
         return redirect(url_for('contact'))
 
 class GalleryItem:
+    """Normalizes a gallery item dict from cloud_storage for templates (URLs, lists, flags)."""
+
     def __init__(self, item_data):
         self.id = item_data.get('id')
         self.title = item_data.get('title')
         self.description = item_data.get('description')
         self.image_filename = item_data.get('image_filename')
         self.image_url = item_data.get('image_url')
-        self.additional_images = item_data.get('additional_images', [])
+        self.image_link = item_data.get('image_link')  # Link for main image
+        self.project_poster_url = item_data.get('project_poster_url')  # Project poster image URL
+        self.project_poster_link = item_data.get('project_poster_link')  # Project poster link
+        self.project_poster_filename = item_data.get('project_poster_filename')  # Project poster filename
+        
+        # Ensure additional_images is always a list
+        additional_images_raw = item_data.get('additional_images', [])
+        if isinstance(additional_images_raw, str):
+            # Handle case where it might be stored as a string
+            import json
+            try:
+                self.additional_images = json.loads(additional_images_raw) if additional_images_raw else []
+            except:
+                self.additional_images = [additional_images_raw] if additional_images_raw else []
+        elif additional_images_raw is None:
+            self.additional_images = []
+        else:
+            self.additional_images = list(additional_images_raw) if additional_images_raw else []
+        
         self.additional_filenames = item_data.get('additional_filenames', [])
-        self.project_link = item_data.get('project_link')
+        
+        # Ensure additional_image_links is always a list
+        additional_image_links_raw = item_data.get('additional_image_links', [])
+        if isinstance(additional_image_links_raw, str):
+            import json
+            try:
+                self.additional_image_links = json.loads(additional_image_links_raw) if additional_image_links_raw else []
+            except:
+                self.additional_image_links = [additional_image_links_raw] if additional_image_links_raw else []
+        elif additional_image_links_raw is None:
+            self.additional_image_links = []
+        else:
+            self.additional_image_links = list(additional_image_links_raw) if additional_image_links_raw else []
+        self.project_link = item_data.get('project_link')  # Backward compatibility
+        self.project_links = item_data.get('project_links', [])  # New: list of project links
+        
+        # Backward compatibility: if project_links is empty but project_link exists, convert it
+        if not self.project_links and self.project_link:
+            self.project_links = [{'title': 'View Project', 'url': self.project_link}]
+        
         self.tags = item_data.get('tags', [])
         self.videos = item_data.get('videos', [])
+        
+        # Handle slideshow images
+        slideshow_images_raw = item_data.get('slideshow_images', [])
+        if isinstance(slideshow_images_raw, str):
+            import json
+            try:
+                self.slideshow_images = json.loads(slideshow_images_raw) if slideshow_images_raw else []
+            except:
+                self.slideshow_images = [slideshow_images_raw] if slideshow_images_raw else []
+        elif slideshow_images_raw is None:
+            self.slideshow_images = []
+        else:
+            self.slideshow_images = list(slideshow_images_raw) if slideshow_images_raw else []
+        
+        self.slideshow_filenames = item_data.get('slideshow_filenames', [])
+        
+        # Handle slideshow image links
+        slideshow_image_links_raw = item_data.get('slideshow_image_links', [])
+        if isinstance(slideshow_image_links_raw, str):
+            import json
+            try:
+                self.slideshow_image_links = json.loads(slideshow_image_links_raw) if slideshow_image_links_raw else []
+            except:
+                self.slideshow_image_links = [slideshow_image_links_raw] if slideshow_image_links_raw else []
+        elif slideshow_image_links_raw is None:
+            self.slideshow_image_links = []
+        else:
+            self.slideshow_image_links = list(slideshow_image_links_raw) if slideshow_image_links_raw else []
+        
+        self.has_slideshow = len(self.slideshow_images) > 0
+        self.slideshow_title = item_data.get('slideshow_title')
+        
         self.course_id = item_data.get('course_id')
         self.created_by = item_data.get('created_by')
         self.created_at = item_data.get('created_at')
@@ -1217,7 +1487,10 @@ class GalleryItem:
                 }]
         
         self.has_videos = len(self.videos) > 0
-        self.has_images = bool(self.image_url) or len(self.additional_images) > 0
+        # Ensure additional_images is a list before checking length
+        additional_images_list = self.additional_images if isinstance(self.additional_images, (list, tuple)) else []
+        self.has_images = bool(self.image_url) or len(additional_images_list) > 0
+        print(f"GalleryItem init - additional_images: {self.additional_images}, type: {type(self.additional_images)}, length: {len(additional_images_list) if isinstance(self.additional_images, (list, tuple)) else 'NOT_LIST'}, has_images: {self.has_images}")
         self.is_mixed_media = self.has_videos and self.has_images
         self.has_multiple_creators = len(self.creators) > 1
 

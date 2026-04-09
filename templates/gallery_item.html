@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ item.title }} - Tech & Ethics Club Gallery</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.2') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.3') }}">
     <style>
+        /* Page-level tweaks: header/nav on small screens (detail grid CSS is below inside .gallery-item-detail) */
         /* Mobile-specific optimizations for gallery item page */
         @media (max-width: 768px) {
             .header {
@@ -64,6 +65,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    {# Single project: item = GalleryItem. Desktop layout = CSS grid: col1 media, col2 title/desc/etc.; JS may move overflow media into a full-width 3-col row (see adjustMediaFlow). #}
     <div class="page gallery-item-page">
         
         <div class="grid-background"></div>
@@ -153,31 +155,256 @@
 
 
 
-            
-            <div class="gallery-item-detail" style="display: flex; flex-direction: row; gap: 80px; background: rgba(255, 255, 255, 0.95); padding: 60px; border-radius: 8px; border: 2px solid #0000FF; box-shadow: 0 4px 20px rgba(0, 0, 255, 0.1); max-width: 1800px; margin: 0 auto; min-height: 700px; align-items: flex-start;">
+            {# Main card: row1 = [media column | details column]; row2 optional = [data-grid-wrapper] inserted by JS #}
+            <div class="gallery-item-detail" style="display: grid; grid-template-columns: 1fr 2fr; grid-auto-rows: min-content; column-gap: 40px; row-gap: 30px; background: rgba(255, 255, 255, 0.95); padding: 60px; border-radius: 8px; border: 2px solid #0000FF; box-shadow: 0 4px 20px rgba(0, 0, 255, 0.1); max-width: none; width: 95%; margin: 0 auto; min-height: 700px; align-items: start; box-sizing: border-box;">
                 <style>
+                    /* Scoped to this page only. Older rules target [data-moved-to-grid]; newer block at end forces 3-col + aspect ratios. */
+                    @media (min-width: 769px) {
+                        /* Allow media items to flow into right column after text */
+                        .gallery-item-detail {
+                            grid-auto-flow: row;
+                        }
+                        /* Create a flexible sub-grid for items after text ends */
+                        .gallery-item-detail[data-has-moved-items="true"] {
+                            grid-template-columns: 1fr 2fr;
+                        }
+                        /* Grid wrapper that spans both columns and uses flexible grid */
+                        [data-grid-wrapper="true"] {
+                            display: grid !important;
+                            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+                            grid-auto-flow: row !important; /* Use row flow to prevent overlap with explicit positioning */
+                            gap: 20px !important;
+                            width: 100% !important;
+                            align-items: start !important;
+                            align-self: start !important;
+                            padding-top: 0 !important;
+                        }
+                        /* Items moved to grid should fit within the flexible grid */
+                        [data-moved-to-grid="true"] {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                        }
+                        .item-image-container {
+                            position: relative;
+                        }
+                        .media-right-column {
+                            position: relative;
+                        }
+                        /* Ensure consistent sizing for all media items in side-by-side layout */
+                        [data-moved-to-grid="true"] {
+                            display: flex !important;
+                            flex-direction: column !important;
+                            align-items: stretch !important;
+                        }
+                        /* Apply fixed height container to ALL media items for uniform sizing */
+                        [data-moved-to-grid="true"].media-item-image,
+                        [data-moved-to-grid="true"].media-item-video {
+                            height: 400px !important;
+                            max-height: 400px !important;
+                            overflow: hidden !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                        }
+                        /* Slideshow containers have different sizing - maintain their natural height */
+                        [data-moved-to-grid="true"].media-item-slideshow {
+                            height: auto !important;
+                            max-height: 600px !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            overflow: visible !important;
+                            display: block !important;
+                            box-sizing: border-box !important;
+                            min-width: 0 !important; /* Allow shrinking below content size */
+                        }
+                        /* Ensure slideshow internal elements don't overflow */
+                        [data-moved-to-grid="true"].media-item-slideshow .slideshow-wrapper {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            box-sizing: border-box !important;
+                            min-height: 400px !important;
+                            height: auto !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-slideshow .slideshow-images {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            box-sizing: border-box !important;
+                            min-height: 400px !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-slideshow .slideshow-slide {
+                            min-width: 100% !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            min-height: 400px !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-slideshow .slideshow-image {
+                            max-width: 100% !important;
+                            max-height: 500px !important;
+                            width: auto !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                        }
+                        [data-moved-to-grid="true"] img,
+                        [data-moved-to-grid="true"] .item-image,
+                        [data-moved-to-grid="true"] .project-poster {
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            width: auto !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                            display: block !important;
+                        }
+                        /* Ensure links in moved items don't create extra space */
+                        [data-moved-to-grid="true"] a {
+                            display: block !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                        }
+                        [data-moved-to-grid="true"] iframe {
+                            max-width: 100% !important;
+                            width: 100% !important;
+                            height: 100% !important;
+                        }
+                        [data-moved-to-grid="true"] video {
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            width: auto !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                        }
+                        [data-moved-to-grid="true"] .video-container {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            height: 100% !important;
+                            position: relative !important;
+                            overflow: hidden !important;
+                        }
+                        /* Maintain aspect ratio for video containers with padding-bottom */
+                        /* Constrain to fit within 400px height container */
+                        [data-moved-to-grid="true"] .video-container > .aspect-ratio-container,
+                        [data-moved-to-grid="true"] .video-container > div[style*="padding-bottom"] {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            height: 100% !important;
+                            position: relative !important;
+                            margin: 0 auto !important;
+                        }
+                        /* For 16:9 videos, calculate max width based on 400px height */
+                        [data-moved-to-grid="true"] .video-container > div[style*="padding-bottom: 56.25%"] {
+                            max-width: calc(400px * 16 / 9) !important;
+                            max-height: 400px !important;
+                        }
+                        /* Optimize spacing for side-by-side items */
+                        [data-moved-to-grid="true"] {
+                            gap: 0 !important;
+                        }
+                        /* Also apply consistent sizing to original items in left column */
+                        .item-image-container .item-image,
+                        .item-image-container .project-poster {
+                            max-height: 400px !important;
+                            max-width: 100% !important;
+                            width: auto !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                        }
+                        .item-image-container a {
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            height: 400px !important;
+                            max-height: 400px !important;
+                            overflow: hidden !important;
+                        }
+                        .item-image-container a > .item-image,
+                        .item-image-container a > .project-poster {
+                            max-height: 100% !important;
+                            max-width: 100% !important;
+                            width: auto !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                        }
+                        /* Consistent sizing for video items in left column */
+                        .item-image-container .video-item {
+                            height: 400px !important;
+                            max-height: 400px !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            overflow: hidden !important;
+                        }
+                        .item-image-container .video-item .video-container {
+                            max-height: 100% !important;
+                            max-width: 100% !important;
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+                        .item-image-container .video-item .video-container > div[style*="padding-bottom"] {
+                            max-height: 100% !important;
+                            max-width: calc(400px * 16 / 9) !important;
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+                        .item-image-container .video-item .video-container {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            position: relative !important;
+                            overflow: visible !important;
+                        }
+                        .item-image-container .video-item .video-container > div[style*="padding-bottom"] {
+                            max-width: min(calc(500px * 16 / 9), 100%) !important;
+                            margin: 0 auto !important;
+                        }
+                        .item-image-container .video-item iframe {
+                            width: 100% !important;
+                            height: 100% !important;
+                        }
+                        .item-image-container .video-item video {
+                            max-width: 100% !important;
+                            max-height: 500px !important;
+                            height: auto !important;
+                            object-fit: contain !important;
+                        }
+                    }
                     @media (max-width: 768px) {
                         .gallery-item-detail {
-                            flex-direction: column !important;
+                            grid-template-columns: 1fr !important;
                             gap: 30px !important;
                             padding: 20px !important;
                             margin: 10px !important;
                             min-height: auto !important;
                         }
                         .item-image-container {
+                            grid-column: 1 !important;
                             width: 100% !important;
-                            min-height: 250px !important;
                             position: static !important;
+                        }
+                        .item-details {
+                            grid-column: 1 !important;
                         }
                         .item-image {
                             width: 100% !important;
                             max-width: 100% !important;
-                            min-height: 250px !important;
+                            height: auto !important;
                             border-radius: 12px !important;
+                        }
+                        .video-container {
+                            min-height: auto !important;
+                        }
+                        .video-thumbnail-wrapper {
+                            height: auto !important;
                         }
                         .item-details {
                             gap: 20px !important;
                             min-height: auto !important;
+                            max-width: 100% !important;
+                            width: 100% !important;
                         }
                         .item-title {
                             font-size: 2rem !important;
@@ -189,10 +416,15 @@
                         }
                         .item-description {
                             padding: 20px !important;
+                            max-width: 100% !important;
+                            box-sizing: border-box !important;
                         }
                         .item-description .blueprint-text {
                             font-size: 1rem !important;
                             line-height: 1.6 !important;
+                            word-wrap: break-word !important;
+                            overflow-wrap: break-word !important;
+                            max-width: 100% !important;
                         }
                         .share-section {
                             margin-top: 15px !important;
@@ -277,24 +509,280 @@
                             gap: 12px !important;
                         }
                         .item-image {
-                            min-height: 200px !important;
+                            height: auto !important;
+                        }
+                        .video-container {
+                            min-height: auto !important;
+                        }
+                    }
+                    
+                    /* Video thumbnail hover effects */
+                    .video-thumbnail-wrapper:hover .video-thumbnail-img {
+                        transform: scale(1.05);
+                    }
+                    .video-thumbnail-wrapper:hover .play-button-overlay {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1.1);
+                    }
+                    .video-thumbnail-wrapper:hover .video-overlay {
+                        opacity: 0.4;
+                    }
+                    .video-container:hover {
+                        border-color: rgba(0, 0, 255, 0.5);
+                        box-shadow: 0 6px 25px rgba(0, 0, 255, 0.25);
+                        transform: translateY(-2px);
+                    }
+                    /* Ensure slideshow displays images at proper size */
+                    .slideshow-wrapper {
+                        min-height: 400px;
+                    }
+                    .slideshow-images {
+                        min-height: 400px;
+                    }
+                    .slideshow-slide {
+                        min-height: 400px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .slideshow-image {
+                        max-width: 100%;
+                        max-height: 500px;
+                        width: auto;
+                        height: auto;
+                        object-fit: contain;
+                    }
+
+                    /* === 3-column grid for remaining media below hero (wins over older [data-moved-to-grid] rules) === */
+                    @media (min-width: 769px) {
+                        [data-grid-wrapper="true"] {
+                            display: grid !important;
+                            grid-template-columns: repeat(3, 1fr) !important;
+                            gap: 20px !important;
+                            width: 100% !important;
+                            align-items: start !important;
+                            align-self: start !important;
+                            padding-top: 0 !important;
+                            margin-top: 0 !important;
+                        }
+                        [data-moved-to-grid="true"] {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            border-radius: 10px !important;
+                            overflow: hidden !important;
+                            border: 2px solid rgba(0, 0, 255, 0.2) !important;
+                            background: rgba(0, 0, 255, 0.03) !important;
+                            transition: all 0.3s ease !important;
+                            box-sizing: border-box !important;
+                        }
+                        [data-moved-to-grid="true"]:hover {
+                            transform: translateY(-3px) !important;
+                            box-shadow: 0 6px 20px rgba(0, 0, 255, 0.2) !important;
+                            border-color: rgba(0, 0, 255, 0.4) !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-image {
+                            aspect-ratio: 4/3 !important;
+                            height: auto !important;
+                            max-height: none !important;
+                            display: block !important;
+                            flex-direction: unset !important;
+                            align-items: unset !important;
+                            justify-content: unset !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-image img,
+                        [data-moved-to-grid="true"].media-item-image .item-image,
+                        [data-moved-to-grid="true"].media-item-image .project-poster {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            display: block !important;
+                            max-height: none !important;
+                            max-width: 100% !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-image a {
+                            display: block !important;
+                            width: 100% !important;
+                            height: 100% !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-video {
+                            height: auto !important;
+                            max-height: none !important;
+                            display: block !important;
+                            flex-direction: unset !important;
+                            align-items: unset !important;
+                            justify-content: unset !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-video .video-container {
+                            width: 100% !important;
+                            height: auto !important;
+                            position: relative !important;
+                            overflow: hidden !important;
+                            border-radius: 8px !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-video iframe,
+                        [data-moved-to-grid="true"].media-item-video video {
+                            width: 100% !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-slideshow {
+                            grid-column: 1 / -1 !important;
+                            height: auto !important;
+                            max-height: none !important;
+                            aspect-ratio: auto !important;
+                            display: block !important;
+                            border-radius: 12px !important;
+                            overflow: visible !important;
+                        }
+                    }
+                    @media (max-width: 768px) {
+                        [data-grid-wrapper="true"] {
+                            grid-template-columns: repeat(2, 1fr) !important;
+                            gap: 15px !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-image {
+                            aspect-ratio: 4/3 !important;
+                            height: auto !important;
+                            max-height: none !important;
+                            display: block !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-image img {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-video {
+                            height: auto !important;
+                            max-height: none !important;
+                            display: block !important;
+                        }
+                        [data-moved-to-grid="true"].media-item-slideshow {
+                            grid-column: 1 / -1 !important;
+                        }
+                    }
+                    @media (max-width: 480px) {
+                        [data-grid-wrapper="true"] {
+                            grid-template-columns: 1fr !important;
                         }
                     }
                 </style>
-                <div class="item-image-container" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; position: sticky; top: 20px; min-height: 500px; width: 600px; flex-shrink: 0;">
+                <!-- Left column: poster, slideshow, images, videos (DOM order). On wide viewports, adjustMediaFlow() clones overflow into [data-grid-wrapper] below. -->
+                <div class="item-image-container" style="grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 100%; align-items: start;">
                     
                     <div class="images-column" style="width: 100%; display: flex; flex-direction: column; gap: 20px;">
                         
+                        {% if item.project_poster_url %}
+                            {% if item.project_poster_link and item.project_poster_link.strip() %}
+                                <a href="{{ item.project_poster_link }}" target="_blank" style="display: block; text-decoration: none; width: 100%; max-width: 100%; margin-bottom: 30px;">
+                                        <img src="{{ item.project_poster_url }}" alt="{{ item.title }} - Project Poster" class="project-poster" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); cursor: pointer; border: 3px solid rgba(0, 0, 255, 0.3);">
+                                </a>
+                            {% else %}
+                                    <img src="{{ item.project_poster_url }}" alt="{{ item.title }} - Project Poster" class="project-poster" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); cursor: pointer; border: 3px solid rgba(0, 0, 255, 0.3); margin-bottom: 30px;" onclick="openImageModal('{{ item.project_poster_url }}', '{{ item.title }} - Project Poster')">
+                            {% endif %}
+                        {% endif %}
                         
-                        {% if item.has_videos %}
-                            <div class="media-section-header">
-                                <h4 style="color: var(--blueprint-blue); margin-bottom: 10px;">🎥 VIDEOS</h4>
+                        {% if item.has_slideshow and item.slideshow_images and item.slideshow_images|length > 0 %}
+                            <div class="slideshow-container" style="width: 100%; max-width: 100%; position: relative; background: rgba(0, 0, 255, 0.05); border-radius: 12px; border: 2px solid rgba(0, 0, 255, 0.3); padding: 20px; box-shadow: 0 4px 15px rgba(0, 0, 255, 0.15); margin-bottom: 20px;">
+                                {% if item.slideshow_title %}
+                                    <div class="slideshow-title" style="margin-bottom: 20px; text-align: center;">
+                                        <h3 style="color: var(--blueprint-blue); font-family: var(--font-robotic); font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0; word-wrap: break-word; overflow-wrap: break-word;">{{ item.slideshow_title }}</h3>
+                                    </div>
+                                {% endif %}
+                                <div class="slideshow-wrapper" style="position: relative; width: 100%; max-width: 100%; overflow: hidden; min-height: 400px;">
+                                    <div class="slideshow-images" id="slideshow-images" style="display: flex; transition: transform 0.5s ease-in-out; width: 100%; min-height: 400px;">
+                                        {% for image_url in item.slideshow_images %}
+                                            {% if image_url %}
+                                                {% set slideshow_index = loop.index0 %}
+                                                {% set slideshow_link_raw = item.slideshow_image_links[slideshow_index] if item.slideshow_image_links and slideshow_index < item.slideshow_image_links|length and item.slideshow_image_links[slideshow_index] else None %}
+                                                {% set slideshow_link = slideshow_link_raw.strip() if slideshow_link_raw and slideshow_link_raw.strip() else None %}
+                                                <div class="slideshow-slide" style="min-width: 100%; width: 100%; display: flex; align-items: center; justify-content: center; background: transparent;">
+                                                    {% if slideshow_link %}
+                                                        <a href="{{ slideshow_link }}" target="_blank" style="display: block; width: 100%; max-width: 100%; text-decoration: none;">
+                                                            <img src="{{ image_url }}" alt="{{ item.title }} - Slideshow Image {{ loop.index }}" class="slideshow-image" style="max-width: 100%; max-height: 500px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto; border-radius: 8px; cursor: pointer;">
+                                                        </a>
+                                                    {% else %}
+                                                        <img src="{{ image_url }}" alt="{{ item.title }} - Slideshow Image {{ loop.index }}" class="slideshow-image" onclick="openImageModal('{{ image_url }}', '{{ item.title }} - Slideshow Image {{ loop.index }}')" style="max-width: 100%; max-height: 500px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto; border-radius: 8px; cursor: pointer;">
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    {% if item.slideshow_images|length > 1 %}
+                                        <button class="slideshow-nav slideshow-prev" onclick="changeSlideshowSlide(-1, this)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, rgba(0, 0, 255, 0.9), rgba(0, 0, 200, 0.9)); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); z-index: 10; transition: all 0.3s ease;">&#8249;</button>
+                                        <button class="slideshow-nav slideshow-next" onclick="changeSlideshowSlide(1, this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, rgba(0, 0, 255, 0.9), rgba(0, 0, 200, 0.9)); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); z-index: 10; transition: all 0.3s ease;">&#8250;</button>
+                                        
+                                        <div class="slideshow-indicators" style="display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                                            {% for image_url in item.slideshow_images %}
+                                                {% if image_url %}
+                                                    <button class="slideshow-indicator" onclick="goToSlideshowSlide({{ loop.index0 }}, this)" data-slide="{{ loop.index0 }}" style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(0, 0, 255, 0.5); background: {% if loop.index0 == 0 %}rgba(0, 0, 255, 0.8){% else %}transparent{% endif %}; cursor: pointer; transition: all 0.3s ease; padding: 0;"></button>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="slideshow-counter" style="text-align: center; margin-top: 10px; color: var(--blueprint-blue); font-weight: 600; font-size: 0.9rem;">
+                                            <span id="slideshow-current">1</span> / <span id="slideshow-total">{{ item.slideshow_images|length }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             
+                            <style>
+                                .slideshow-nav:hover {
+                                    background: linear-gradient(135deg, rgba(0, 0, 255, 1), rgba(0, 0, 200, 1)) !important;
+                                    transform: translateY(-50%) scale(1.1) !important;
+                                }
+                                .slideshow-indicator:hover {
+                                    background: rgba(0, 0, 255, 0.5) !important;
+                                }
+                                .slideshow-indicator.active {
+                                    background: rgba(0, 0, 255, 0.8) !important;
+                                }
+                                @media (max-width: 768px) {
+                                    .slideshow-nav {
+                                        width: 40px !important;
+                                        height: 40px !important;
+                                        font-size: 20px !important;
+                                    }
+                                    .slideshow-image {
+                                        max-height: 350px !important;
+                                    }
+                                }
+                            </style>
+                        {% endif %}
+                        
+                        {% if item.has_images %}
+                            {% if item.image_url %}
+                                {% if item.image_link and item.image_link.strip() %}
+                                    <a href="{{ item.image_link }}" target="_blank" style="display: block; text-decoration: none; width: 100%; max-width: 100%;">
+                                        <img src="{{ item.image_url }}" alt="{{ item.title }}" class="item-image" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    </a>
+                                {% else %}
+                                        <img src="{{ item.image_url }}" alt="{{ item.title }}" class="item-image" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onclick="openImageModal('{{ item.image_url }}', '{{ item.title }}')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% if item.additional_images and item.additional_images|length > 0 %}
+                                {% for image_url in item.additional_images %}
+                                    {% if image_url %}
+                                        {% set image_index = loop.index0 %}
+                                        {% set image_link_raw = item.additional_image_links[image_index] if item.additional_image_links and image_index < item.additional_image_links|length and item.additional_image_links[image_index] else None %}
+                                        {% set image_link = image_link_raw.strip() if image_link_raw and image_link_raw.strip() else None %}
+                                        {% if image_link %}
+                                            <a href="{{ image_link }}" target="_blank" style="display: block; text-decoration: none; width: 100%; max-width: 100%;">
+                                                <img src="{{ image_url }}" alt="{{ item.title }}" class="item-image" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onerror="console.error('Failed to load image: {{ image_url }}'); this.style.display='none';">
+                                            </a>
+                                        {% else %}
+                                                <img src="{{ image_url }}" alt="{{ item.title }}" class="item-image" style="max-width: 100%; max-height: 400px; width: auto; height: auto; object-fit: contain; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onclick="openImageModal('{{ image_url }}', '{{ item.title }}')" onerror="console.error('Failed to load image: {{ image_url }}'); this.style.display='none';">
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if item.has_videos %}
                             {% for video in item.videos %}
-                                <div class="video-container" style="width: 100%; max-width: 600px; min-height: 400px; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); position: relative; overflow: hidden;">
+                                <div class="video-container video-item" style="width: 100%; max-width: 100%; background: rgba(0, 0, 255, 0.05); border-radius: 12px; border: 2px solid rgba(0, 0, 255, 0.3); position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 255, 0.15); transition: all 0.3s ease;">
                                     {% if video.title %}
-                                        <div class="video-title" style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 255, 0.9); color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 700; z-index: 10;">
+                                        <div class="video-title" style="position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg, rgba(0, 0, 255, 0.95), rgba(0, 0, 200, 0.95)); color: white; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; z-index: 10; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">
                                             {{ video.title }}
                                         </div>
                                     {% endif %}
@@ -311,25 +799,31 @@
                                                     {% set video_id = video.url.split('youtube.com/')[1].split('?')[0].split('/')[0] %}
                                                 {% endif %}
                                             {% endif %}
-                                            <iframe width="100%" height="400" src="https://www.youtube.com/embed/{{ video_id }}?rel=0&modestbranding=1&showinfo=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 6px;"></iframe>
+                                            <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px;">
+                                                <iframe src="https://www.youtube.com/embed/{{ video_id }}?rel=0&modestbranding=1&showinfo=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);"></iframe>
+                                            </div>
                                         {% elif 'vimeo.com' in video.url %}
                                             {% set video_id = video.url.split('vimeo.com/')[1].split('?')[0].split('#')[0] %}
-                                            <iframe width="100%" height="400" src="https://player.vimeo.com/video/{{ video_id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="border-radius: 6px;"></iframe>
+                                            <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px;">
+                                                <iframe src="https://player.vimeo.com/video/{{ video_id }}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);"></iframe>
+                                            </div>
                                         {% elif 'drive.google.com' in video.url %}
                                             
                                             {% if '/file/d/' in video.url %}
                                                 {% set file_id = video.url.split('/file/d/')[1].split('/')[0] %}
-                                                <iframe width="100%" height="400" src="https://drive.google.com/file/d/{{ file_id }}/preview" frameborder="0" allow="autoplay" allowfullscreen style="border-radius: 6px;"></iframe>
+                                                <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px;">
+                                                    <iframe src="https://drive.google.com/file/d/{{ file_id }}/preview" frameborder="0" allow="autoplay" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);"></iframe>
+                                                </div>
                                             {% else %}
                                                 
-                                                <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.1); border-radius: 6px;">
-                                                    <p><strong>Google Drive Video</strong></p>
-                                                    <a href="{{ video.url }}" target="_blank" style="color: var(--blueprint-blue); text-decoration: none;">Click to view video</a>
+                                                <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.05); border-radius: 8px; border: 1px solid rgba(0, 0, 255, 0.2);">
+                                                    <p style="font-weight: 600; color: var(--blueprint-blue); margin-bottom: 10px;">Google Drive Video</p>
+                                                    <a href="{{ video.url }}" target="_blank" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 500; padding: 8px 16px; background: rgba(0, 0, 255, 0.1); border-radius: 4px; display: inline-block;">Click to view video</a>
                                                 </div>
                                             {% endif %}
                                         {% elif video.url.endswith('.mp4') or video.url.endswith('.webm') or video.url.endswith('.ogg') or video.url.endswith('.mov') or video.url.endswith('.avi') %}
                                             
-                                            <video width="100%" height="400" controls preload="metadata" style="border-radius: 6px;">
+                                            <video width="100%" controls preload="metadata" style="border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); display: block;">
                                                 <source src="{{ video.url }}" type="video/mp4">
                                                 <source src="{{ video.url }}" type="video/webm">
                                                 <source src="{{ video.url }}" type="video/ogg">
@@ -340,50 +834,36 @@
                                             </video>
                                         {% else %}
                                             
-                                            <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.1); border-radius: 6px;">
-                                                <p><strong>Video Link</strong></p>
-                                                <a href="{{ video.url }}" target="_blank" style="color: var(--blueprint-blue); text-decoration: none;">Click to view video</a>
+                                            <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.05); border-radius: 8px; border: 1px solid rgba(0, 0, 255, 0.2);">
+                                                <p style="font-weight: 600; color: var(--blueprint-blue); margin-bottom: 10px;">Video Link</p>
+                                                <a href="{{ video.url }}" target="_blank" style="color: var(--blueprint-blue); text-decoration: none; font-weight: 500; padding: 8px 16px; background: rgba(0, 0, 255, 0.1); border-radius: 4px; display: inline-block; margin-bottom: 15px;">Click to view video</a>
                                                 {% if video.thumbnail_url %}
-                                                    <br><br>
-                                                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title or 'Video thumbnail' }}" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                                                    <br>
+                                                    <img src="{{ video.thumbnail_url }}" alt="{{ video.title or 'Video thumbnail' }}" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); margin-top: 10px; display: block;">
                                                 {% endif %}
                                             </div>
                                         {% endif %}
                                     {% else %}
                                         
-                                        <img src="{{ video.thumbnail_url or item.image_url }}" alt="{{ video.title or item.title }}" class="item-image" style="width: 100%; height: 400px; object-fit: cover; display: block;">
+                                        <div class="video-thumbnail-wrapper" style="width: 100%; position: relative; overflow: hidden; border-radius: 8px; cursor: pointer;" onclick="window.open('{{ video.url }}', '_blank')">
+                                            <img src="{{ video.thumbnail_url or item.image_url }}" alt="{{ video.title or item.title }}" class="item-image video-thumbnail-img" style="width: 100%; height: auto; display: block; transition: transform 0.3s ease; object-fit: contain;">
+                                            <div class="play-button-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.9; transition: all 0.3s ease; pointer-events: none; z-index: 5;">
+                                                <div class="play-button" style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(0, 0, 255, 0.95), rgba(0, 0, 200, 0.95)); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); border: 3px solid white;">
+                                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                                        <polygon points="10,8 16,12 10,16" fill="white"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="video-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3)); opacity: 0.6; transition: opacity 0.3s ease;"></div>
+                                        </div>
                                     {% endif %}
                                 </div>
                             {% endfor %}
                         {% endif %}
                         
                         
-                        {% if item.has_images %}
-                            {% if item.has_videos %}
-                                <div class="media-section-header">
-                                    <h4 style="color: var(--blueprint-blue); margin-bottom: 10px; margin-top: 20px;">📷 IMAGES</h4>
-                                </div>
-                            {% endif %}
-                            
-                            {% if item.image_url %}
-                                {% if not item.has_videos %}
-                                    <div class="media-section-header">
-                                        <h4 style="color: var(--blueprint-blue); margin-bottom: 10px;">📷 IMAGES</h4>
-                                    </div>
-                                {% endif %}
-                                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="item-image" style="width: 100%; max-width: 600px; min-height: 400px; object-fit: cover; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onclick="openImageModal('{{ item.image_url }}', '{{ item.title }}')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            {% endif %}
-                            
-                        {% if item.additional_images %}
-                            {% for image_url in item.additional_images %}
-                                <img src="{{ image_url }}" alt="{{ item.title }}" class="item-image" style="width: 100%; max-width: 600px; min-height: 400px; object-fit: cover; display: block; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px solid rgba(0, 0, 255, 0.2); cursor: pointer;" onclick="openImageModal('{{ image_url }}', '{{ item.title }}')">
-                            {% endfor %}
-                            {% endif %}
-                        {% endif %}
-                        
-                        
                         {% if not item.has_images and not item.has_videos %}
-                            <div class="no-media-placeholder" style="width: 100%; max-width: 600px; min-height: 400px; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px dashed rgba(0, 0, 255, 0.3); display: flex; align-items: center; justify-content: center; color: var(--blueprint-blue);">
+                            <div class="no-media-placeholder" style="width: 100%; max-width: 350px; min-height: 200px; background: rgba(0, 0, 255, 0.05); border-radius: 8px; border: 2px dashed rgba(0, 0, 255, 0.3); display: flex; align-items: center; justify-content: center; color: var(--blueprint-blue);">
                                 <span style="font-size: 1.2rem;">No media available</span>
                             </div>
                         {% endif %}
@@ -394,26 +874,27 @@
                             <span class="placeholder-text">Image not available</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="item-details" style="display: flex; flex-direction: column; gap: 30px; min-width: 0; min-height: 600px; flex: 1;">
-                    <h1 class="item-title" style="font-size: 2.8rem; line-height: 1.1; word-wrap: break-word; margin: 0; color: var(--blueprint-blue); font-family: var(--font-robotic); text-transform: uppercase; letter-spacing: 1px;">{{ item.title }}</h1>
+                    </div>
+                    
+                    <!-- Right column: title, creators, share, description, tags, links, admin delete -->
+                    <div class="item-details" style="grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 30px; min-width: 0; max-width: 100%; width: 100%; overflow-wrap: break-word; word-wrap: break-word;">
+                    <h1 class="item-title" style="font-size: 2.8rem; line-height: 1.1; word-wrap: break-word; overflow-wrap: break-word; margin: 0; color: var(--blueprint-blue); font-family: var(--font-robotic); text-transform: uppercase; letter-spacing: 1px; max-width: 100%;">{{ item.title }}</h1>
                     
                     
                     {% if item.creators and item.creators|length > 0 %}
-                        <div class="creators-info" style="margin-bottom: 15px; padding: 20px; background: rgba(0, 0, 255, 0.05); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.1); font-size: 16px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <div class="creators-info" style="margin-bottom: 15px; padding: 20px; background: rgba(0, 0, 255, 0.05); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.1); font-size: 16px; max-width: 100%; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
                                 <span class="creator-label" style="font-weight: 600; color: var(--blueprint-blue);">
                                     {% if item.creators|length == 1 %}Creator:{% else %}Creators:{% endif %}
                                 </span>
                             </div>
-                            <div class="creators-list" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div class="creators-list" style="display: flex; flex-direction: column; gap: 15px; max-width: 100%;">
                                 {% for creator in item.creators %}
-                                    <div class="creator-item" style="padding: 15px; background: rgba(255, 255, 255, 0.8); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.2);">
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                            <span class="creator-name" style="font-weight: 600; color: var(--blueprint-blue); font-size: 1.1em;">{{ creator.name }}</span>
+                                    <div class="creator-item" style="padding: 15px; background: rgba(255, 255, 255, 0.8); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.2); max-width: 100%; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                                            <span class="creator-name" style="font-weight: 600; color: var(--blueprint-blue); font-size: 1.1em; word-wrap: break-word; overflow-wrap: break-word;">{{ creator.name }}</span>
                                             {% if creator.school %}
-                                                <span class="creator-school" style="font-size: 0.9em; color: var(--blueprint-blue); font-style: italic;">({{ creator.school }})</span>
+                                                <span class="creator-school" style="font-size: 0.9em; color: var(--blueprint-blue); font-style: italic; word-wrap: break-word; overflow-wrap: break-word;">({{ creator.school }})</span>
                                             {% endif %}
                                         </div>
                                         
@@ -434,26 +915,16 @@
                                             </div>
                                         {% endif %}
                                         
-                                        {% if creator.city or creator.state or creator.country %}
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <span style="font-weight: 600; color: var(--blueprint-blue); font-size: 0.9em;">Location:</span>
-                                                <span style="color: #333; font-size: 0.9em;">
-                                                    {% if creator.city %}{{ creator.city }}{% endif %}
-                                                    {% if creator.state %}{% if creator.city %}, {% endif %}{{ creator.state }}{% endif %}
-                                                    {% if creator.country %}{% if creator.city or creator.state %}, {% endif %}{{ creator.country }}{% endif %}
-                                                </span>
-                                            </div>
-                                        {% endif %}
                                     </div>
                                 {% endfor %}
                             </div>
                         </div>
                     {% elif item.creator_name %}
                         
-                        <div class="creator-info" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 20px; background: rgba(0, 0, 255, 0.05); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.1); font-size: 16px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="creator-info" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; padding: 20px; background: rgba(0, 0, 255, 0.05); border-radius: 6px; border: 1px solid rgba(0, 0, 255, 0.1); font-size: 16px; max-width: 100%; box-sizing: border-box; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span class="creator-label">By:</span>
-                                <span class="creator-name">{{ item.creator_name }}</span>
+                                <span class="creator-name" style="word-wrap: break-word; overflow-wrap: break-word;">{{ item.creator_name }}</span>
                             </div>
                             {% if item.creator_email or item.creator_linkedin %}
                                 <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0, 0, 255, 0.1);">
@@ -472,29 +943,6 @@
                                 </div>
                             {% endif %}
                             
-                            {% if item.creator_city or item.creator_state or item.creator_country %}
-                                <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0, 0, 255, 0.1);">
-                                    {% if item.creator_city or item.creator_state or item.creator_country %}
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span style="font-weight: 600; color: var(--blueprint-blue);">Location:</span>
-                                            <span style="color: #333;">
-                                                {% if item.creator_city %}{{ item.creator_city }}{% endif %}
-                                                {% if item.creator_state %}{% if item.creator_city %}, {% endif %}{{ item.creator_state }}{% endif %}
-                                                {% if item.creator_country %}{% if item.creator_city or item.creator_state %}, {% endif %}{{ item.creator_country }}{% endif %}
-                                            </span>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-                            
-                            {% if item.creator_school %}
-                                <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0, 0, 255, 0.1);">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-weight: 600; color: var(--blueprint-blue);">School:</span>
-                                        <span style="color: #333;">{{ item.creator_school }}</span>
-                                    </div>
-                                </div>
-                            {% endif %}
                         </div>
                     {% endif %}
                     
@@ -509,19 +957,37 @@
                         </div>
                     </div>
                     
-                    <div class="item-description" style="background: rgba(0, 0, 255, 0.03); padding: 30px; border-radius: 8px; border-left: 4px solid var(--blueprint-blue);">
-                        <p class="blueprint-text" style="font-size: 1.1rem; line-height: 1.7; margin: 0; color: #333;">{{ item.description }}</p>
+                    <div class="item-description" style="background: rgba(0, 0, 255, 0.03); padding: 35px; border-radius: 8px; border-left: 4px solid var(--blueprint-blue); width: 100%; max-width: 100%; box-sizing: border-box;">
+                        {% if item.description %}
+                            {% set description_paragraphs = item.description.split('\n\n') %}
+                            {% for paragraph in description_paragraphs %}
+                                {% if paragraph.strip() %}
+                                    <p class="blueprint-text" style="font-size: 1.1rem; line-height: 1.7; margin: 0 0 1.2rem 0; color: #333; max-width: 100%; word-wrap: break-word; overflow-wrap: break-word; box-sizing: border-box; white-space: pre-line;">{{ paragraph }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
                     </div>
                     
-                    {% if item.tags %}
-                        <div class="tags-container">
+                    {% if item.tags and not item.course_id %}
+                        <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 10px; max-width: 100%;">
                             {% for tag in item.tags %}
-                                <span class="tag">{{ tag }}</span>
+                                <span class="tag" style="word-wrap: break-word; overflow-wrap: break-word;">{{ tag }}</span>
                             {% endfor %}
                         </div>
                     {% endif %}
                     
-                    {% if item.project_link %}
+                    {% if item.project_links and item.project_links|length > 0 %}
+                        <div class="project-links-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                            {% for project_link in item.project_links %}
+                                <div class="project-link-container">
+                                    <a href="{{ project_link.url }}" target="_blank" class="project-link" style="touch-action: manipulation; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; width: 100%;">
+                                        <span class="link-text">{{ project_link.title }}</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% elif item.project_link %}
+                        {# Backward compatibility for old single project_link #}
                         <div class="project-link-container">
                             <a href="{{ item.project_link }}" target="_blank" class="project-link" style="touch-action: manipulation; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;">
                                 <span class="link-text">VIEW PROJECT</span>
@@ -582,6 +1048,8 @@
     </div>
 
     <script>
+        /* Gallery item page scripts: lightbox, responsive media reflow (adjustMediaFlow), slideshow controls. */
+
         function openImageModal(imageUrl, title) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
@@ -630,7 +1098,585 @@
                     this.style.transform = 'scale(1)';
                 });
             });
+            
+            /* Desktop only: reflow extra media into a full-width 3-column strip under the hero row. */
+            if (window.innerWidth > 768) {
+                /**
+                 * Reset prior run, then split media: keep items whose top is above .item-details bottom
+                 * in the left column; clone the rest into [data-grid-wrapper] (CSS: 3 cols).
+                 * Cloned iframes are rebuilt as new elements so embeds load (cloneNode iframes often break).
+                 */
+                function adjustMediaFlow() {
+                    const textContent = document.querySelector('.item-details');
+                    const mediaContainer = document.querySelector('.item-image-container');
+                    const mainContainer = document.querySelector('.gallery-item-detail');
+                    
+                    if (!textContent || !mediaContainer || !mainContainer) return;
+                    
+                    // Remove any items that were previously moved to grid FIRST
+                    const movedItems = mainContainer.querySelectorAll('[data-moved-to-grid="true"]');
+                    movedItems.forEach(item => item.remove());
+                    // Also remove any grid wrappers
+                    const gridWrappers = mainContainer.querySelectorAll('[data-grid-wrapper="true"]');
+                    gridWrappers.forEach(wrapper => wrapper.remove());
+                    mainContainer.removeAttribute('data-has-moved-items');
+                    
+                    // Also ensure any hidden items in the media container are shown again
+                    const hiddenItems = mediaContainer.querySelectorAll('[style*="display: none"]');
+                    hiddenItems.forEach(item => {
+                        // Only show if it's not supposed to be hidden for other reasons
+                        if (item.hasAttribute('data-moved-to-grid')) {
+                            item.style.display = '';
+                            item.removeAttribute('data-moved-to-grid');
+                        }
+                    });
+                    
+                    // Get all media items (excluding section headers)
+                    // Images are now direct, so select them along with video items, project posters, and slideshow containers
+                    const allImages = Array.from(mediaContainer.querySelectorAll('.item-image, .project-poster'));
+                    const imageItems = allImages
+                        .filter(img => {
+                            // Only include images that are actually in the mediaContainer (not moved to grid)
+                            const parent = img.closest('a') || img;
+                            return mediaContainer.contains(parent) && !parent.hasAttribute('data-moved-to-grid');
+                        })
+                        .map(img => {
+                            // Find the parent that should be treated as the media item (either the img itself or its link parent)
+                            return img.closest('a') || img;
+                        });
+                    // Remove duplicates (in case same element is selected multiple times)
+                    const uniqueImageItems = [...new Set(imageItems)];
+                    const videoItems = Array.from(mediaContainer.querySelectorAll('.video-item'))
+                        .filter(item => !item.hasAttribute('data-moved-to-grid'));
+                    const slideshowItems = Array.from(mediaContainer.querySelectorAll('.slideshow-container'))
+                        .filter(item => !item.hasAttribute('data-moved-to-grid'));
+                    const allMediaItems = [
+                        ...uniqueImageItems,
+                        ...videoItems,
+                        ...slideshowItems
+                    ];
+                    
+                    // Reset all items in media container - show them all first
+                    allMediaItems.forEach(item => {
+                        item.style.removeProperty('display');
+                        item.removeAttribute('data-moved-to-grid');
+                        item.removeAttribute('data-original-hidden');
+                    });
+                    
+                    if (allMediaItems.length === 0) return;
+                    
+                    // Split by geometry: compare each block's top to the description column's bottom (viewport coords).
+                    const textRect = textContent.getBoundingClientRect();
+                    const textBottom = textRect.bottom;
+                    let splitIndex = -1;
+                    
+                    for (let i = 0; i < allMediaItems.length; i++) {
+                        const itemTop = allMediaItems[i].getBoundingClientRect().top;
+                        if (itemTop >= textBottom) {
+                            splitIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    // If we have items that extend beyond or near text end, create flexible grid layout
+                    // This minimizes empty space by using the grid layout
+                    if (splitIndex >= 0 && splitIndex < allMediaItems.length) {
+                        const itemsBeforeSplit = allMediaItems.slice(0, splitIndex);
+                        let itemsAfterSplit = allMediaItems.slice(splitIndex);
+                        
+                        // Reorder items: if there's a single large item and smaller items,
+                        // place smaller items first in a row, then the large item after
+                        // This will be done after items are added to DOM to get accurate sizes
+                        
+                        const gridWrapper = document.createElement('div');
+                        gridWrapper.style.gridColumn = '1 / -1';
+                        gridWrapper.style.gridRow = '2';
+                        gridWrapper.setAttribute('data-grid-wrapper', 'true');
+                        mainContainer.appendChild(gridWrapper);
+                        
+                        // Create flexible grid layout for items after text ends
+                        // Let CSS Grid auto-placement handle positioning to prevent overlaps
+                        itemsAfterSplit.forEach((item, index) => {
+                            let clone = item.cloneNode(true);
+                            
+                            // If item is a direct image (not in a link or slideshow container), wrap it for grid positioning
+                            // Slideshow containers and video items are already containers, so don't wrap them
+                            if (item.tagName === 'IMG' && !item.closest('.slideshow-container') && !item.closest('.video-item')) {
+                                const wrapper = document.createElement('div');
+                                wrapper.style.width = '100%';
+                                wrapper.style.maxWidth = '100%';
+                                wrapper.appendChild(clone);
+                                clone = wrapper;
+                            }
+                            
+                            clone.setAttribute('data-moved-to-grid', 'true');
+                            
+                            if (clone.classList.contains('slideshow-container')) {
+                                clone.classList.add('media-item-slideshow');
+                            } else if (clone.querySelector('.video-container') || clone.classList.contains('video-item')) {
+                                clone.classList.add('media-item-video');
+                            } else {
+                                clone.classList.add('media-item-image');
+                            }
+                            
+                            // If this is the last item, mark it for potential flush positioning
+                            if (index === itemsAfterSplit.length - 1) {
+                                clone.setAttribute('data-last-item', 'true');
+                            }
+                            
+                            // Ensure consistent sizing - maintain aspect ratio with max-height constraint
+                            const images = clone.querySelectorAll('img, .item-image, .project-poster');
+                            const videos = clone.querySelectorAll('iframe, video');
+                            const videoContainers = clone.querySelectorAll('.video-container');
+                            const links = clone.querySelectorAll('a');
+                            
+                            // Ensure links don't create extra space
+                            links.forEach(link => {
+                                link.style.display = 'block';
+                                link.style.width = '100%';
+                                link.style.maxWidth = '100%';
+                            });
+                            
+                            images.forEach(img => {
+                                img.style.maxWidth = '100%';
+                                img.style.maxHeight = '100%';
+                                img.style.width = 'auto';
+                                img.style.height = 'auto';
+                                img.style.objectFit = 'contain';
+                                img.style.display = 'block';
+                            });
+                            
+                            videos.forEach(vid => {
+                                // For iframes, let the aspect ratio container handle sizing
+                                if (vid.tagName === 'IFRAME') {
+                                    vid.style.width = '100%';
+                                    vid.style.height = '100%';
+                                } else {
+                                    // For video elements, fit within container
+                                    vid.style.maxWidth = '100%';
+                                    vid.style.maxHeight = '100%';
+                                    vid.style.width = 'auto';
+                                    vid.style.height = 'auto';
+                                    vid.style.objectFit = 'contain';
+                                }
+                            });
+                            
+                            videoContainers.forEach(container => {
+                                container.style.width = '100%';
+                                container.style.maxWidth = '100%';
+                                container.style.position = 'relative';
+                                container.style.overflow = 'hidden';
+                            });
+                            
+                            // Apply sizing to the container itself - ensure it fits within grid cell
+                            clone.style.width = '100%';
+                            clone.style.maxWidth = '100%';
+                            clone.style.marginBottom = '0'; // Gap handled by wrapper
+                            clone.style.boxSizing = 'border-box'; // Include padding/border in width
+                            
+                            // For slideshow containers, ensure internal elements are also constrained and fix IDs
+                            if (clone.classList.contains('slideshow-container')) {
+                                const slideshowWrapper = clone.querySelector('.slideshow-wrapper');
+                                if (slideshowWrapper) {
+                                    slideshowWrapper.style.width = '100%';
+                                    slideshowWrapper.style.maxWidth = '100%';
+                                    slideshowWrapper.style.boxSizing = 'border-box';
+                                }
+                                const slideshowImages = clone.querySelector('.slideshow-images');
+                                if (slideshowImages) {
+                                    slideshowImages.style.width = '100%';
+                                    slideshowImages.style.maxWidth = '100%';
+                                    slideshowImages.style.minHeight = '400px';
+                                    // Remove ID to avoid duplicates - slideshow will work via event delegation
+                                    slideshowImages.removeAttribute('id');
+                                }
+                                // Ensure slideshow images display at proper size
+                                const slideshowImageElements = clone.querySelectorAll('.slideshow-image');
+                                slideshowImageElements.forEach(img => {
+                                    img.style.maxWidth = '100%';
+                                    img.style.maxHeight = '500px';
+                                    img.style.width = 'auto';
+                                    img.style.height = 'auto';
+                                    img.style.objectFit = 'contain';
+                                });
+                                const slideshowSlides = clone.querySelectorAll('.slideshow-slide');
+                                slideshowSlides.forEach(slide => {
+                                    slide.style.minHeight = '400px';
+                                    slide.style.display = 'flex';
+                                    slide.style.alignItems = 'center';
+                                    slide.style.justifyContent = 'center';
+                                });
+                                // Remove duplicate IDs from cloned slideshow
+                                const currentSpan = clone.querySelector('#slideshow-current');
+                                if (currentSpan) {
+                                    currentSpan.removeAttribute('id');
+                                }
+                                // Update onclick handlers to use event delegation
+                                const prevBtn = clone.querySelector('.slideshow-prev');
+                                const nextBtn = clone.querySelector('.slideshow-next');
+                                const indicators = clone.querySelectorAll('.slideshow-indicator');
+                                
+                                if (prevBtn) {
+                                    prevBtn.setAttribute('onclick', 'changeSlideshowSlide(-1, this)');
+                                }
+                                if (nextBtn) {
+                                    nextBtn.setAttribute('onclick', 'changeSlideshowSlide(1, this)');
+                                }
+                                indicators.forEach((indicator, idx) => {
+                                    indicator.setAttribute('onclick', `goToSlideshowSlide(${idx}, this)`);
+                                });
+                            }
+                            
+                            // Remove any explicit grid positioning - let CSS Grid auto-placement handle it
+                            clone.style.gridColumn = '';
+                            clone.style.gridRow = '';
+                            
+                            gridWrapper.appendChild(clone);
+                            
+                            // YouTube/Vimeo embeds: duplicate iframe nodes often stay blank — recreate from attributes.
+                            clone.querySelectorAll('iframe').forEach(oldIframe => {
+                                const newIframe = document.createElement('iframe');
+                                Array.from(oldIframe.attributes).forEach(attr => {
+                                    newIframe.setAttribute(attr.name, attr.value);
+                                });
+                                oldIframe.parentNode.replaceChild(newIframe, oldIframe);
+                            });
+                            
+                            if (clone.classList.contains('slideshow-container')) {
+                                setTimeout(() => {
+                                    const state = getSlideshowState(clone);
+                                    if (state.total > 0) {
+                                        setSlideshowState(clone, 0);
+                                    }
+                                }, 0);
+                            }
+                            
+                            // Hide original item - use important to ensure it stays hidden
+                            item.style.setProperty('display', 'none', 'important');
+                            item.setAttribute('data-original-hidden', 'true');
+                        });
+                        
+                        mainContainer.setAttribute('data-has-moved-items', 'true');
+                        return;
+                        
+                        // Position wrapper to be flush with text bottom, but avoid overlapping left column items
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                // Calculate where left column items end
+                                let maxLeftColumnBottom = 0;
+                                itemsBeforeSplit.forEach(item => {
+                                    if (item.offsetParent !== null && !item.hasAttribute('data-original-hidden')) {
+                                        const itemRect = item.getBoundingClientRect();
+                                        maxLeftColumnBottom = Math.max(maxLeftColumnBottom, itemRect.bottom);
+                                    }
+                                });
+                                
+                                const textBottom = textContent.getBoundingClientRect().bottom;
+                                const wrapperTop = gridWrapper.getBoundingClientRect().top;
+                                
+                                // Primary goal: position flush with text bottom
+                                // Only push down if left column items extend below text (to prevent overlap)
+                                let desiredTop = textBottom;
+                                if (maxLeftColumnBottom > textBottom + 10) {
+                                    // Left column extends below text, position after it to avoid overlap
+                                    desiredTop = maxLeftColumnBottom + 20;
+                                }
+                                
+                                const gap = wrapperTop - desiredTop;
+                                if (Math.abs(gap) > 0.5) {
+                                    gridWrapper.style.marginTop = `-${gap}px`;
+                                }
+                            });
+                        });
+                        
+                        // After items are added, reorder and position them to align with existing items and fill rows
+                        // Also reposition the wrapper to be flush with text after all items are rendered
+                        requestAnimationFrame(() => {
+                            let allItems = Array.from(gridWrapper.children);
+                            if (allItems.length === 0) return;
+                            
+                            // Function to ensure items are not overlapping
+                            // CSS Grid auto-placement handles positioning, so we just need to ensure no explicit positions
+                            const positionItems = () => {
+                                // Get fresh items list in case they were reordered
+                                allItems = Array.from(gridWrapper.children);
+                                
+                                // Remove any explicit grid positioning to let CSS Grid auto-placement work
+                                // This prevents overlaps by letting the grid naturally flow items
+                                allItems.forEach((item) => {
+                                    item.style.gridColumn = '';
+                                    item.style.gridRow = '';
+                                });
+                            }; // End positionItems function
+                            
+                            // Reorder items: if there's a single large item and smaller items,
+                            // place smaller items first in a row, then the large item after
+                            if (allItems.length > 1) {
+                                // Wait a bit for items to render, then calculate sizes
+                                setTimeout(() => {
+                                    const itemSizes = allItems.map(item => {
+                                        const rect = item.getBoundingClientRect();
+                                        return {
+                                            item: item,
+                                            area: rect.width * rect.height,
+                                            width: rect.width,
+                                            height: rect.height
+                                        };
+                                    });
+                                    
+                                    // Sort by area to find large vs small items
+                                    itemSizes.sort((a, b) => a.area - b.area);
+                                    
+                                    // Check if there's one significantly larger item
+                                    const largest = itemSizes[itemSizes.length - 1];
+                                    const secondLargest = itemSizes[itemSizes.length - 2];
+                                    
+                                    // If largest is significantly bigger (more than 1.5x), reorder
+                                    if (largest.area > secondLargest.area * 1.5) {
+                                        // Remove all items from wrapper
+                                        const smallItems = itemSizes.slice(0, -1).map(s => s.item);
+                                        const largeItem = largest.item;
+                                        
+                                        // Remove from DOM temporarily
+                                        allItems.forEach(item => gridWrapper.removeChild(item));
+                                        
+                                        // Re-add in new order: small items first, then large item
+                                        // Let CSS Grid auto-placement handle positioning to prevent overlaps
+                                        smallItems.forEach((item, idx) => {
+                                            item.style.gridColumn = '';
+                                            item.style.gridRow = '';
+                                            gridWrapper.appendChild(item);
+                                        });
+                                        // Add large item last - let grid handle its position
+                                        largeItem.style.gridColumn = '';
+                                        largeItem.style.gridRow = '';
+                                        gridWrapper.appendChild(largeItem);
+                                    } else {
+                                        // No reordering needed, just ensure no explicit positions
+                                        positionItems();
+                                    }
+                                    
+                                    // Final repositioning check after positioning logic - keep flush with text
+                                    setTimeout(() => {
+                                        // Calculate where left column items end
+                                        let maxLeftColumnBottom = 0;
+                                        itemsBeforeSplit.forEach(item => {
+                                            if (item.offsetParent !== null && !item.hasAttribute('data-original-hidden')) {
+                                                const itemRect = item.getBoundingClientRect();
+                                                maxLeftColumnBottom = Math.max(maxLeftColumnBottom, itemRect.bottom);
+                                            }
+                                        });
+                                        
+                                        const textBottom = textContent.getBoundingClientRect().bottom;
+                                        const wrapperTop = gridWrapper.getBoundingClientRect().top;
+                                        
+                                        // Primary goal: position flush with text bottom
+                                        // Only push down if left column items extend below text (to prevent overlap)
+                                        let desiredTop = textBottom;
+                                        if (maxLeftColumnBottom > textBottom + 10) {
+                                            // Left column extends below text, position after it to avoid overlap
+                                            desiredTop = maxLeftColumnBottom + 20;
+                                        }
+                                        
+                                        const gap = wrapperTop - desiredTop;
+                                        if (Math.abs(gap) > 0.5) {
+                                            gridWrapper.style.marginTop = `-${gap}px`;
+                                        }
+                                    }, 150);
+                                }, 100);
+                            } else {
+                                // No reordering needed, proceed directly
+                                positionItems();
+                                
+                                // Final repositioning check - keep flush with text
+                                setTimeout(() => {
+                                    // Calculate where left column items end
+                                    let maxLeftColumnBottom = 0;
+                                    itemsBeforeSplit.forEach(item => {
+                                        if (item.offsetParent !== null && !item.hasAttribute('data-original-hidden')) {
+                                            const itemRect = item.getBoundingClientRect();
+                                            maxLeftColumnBottom = Math.max(maxLeftColumnBottom, itemRect.bottom);
+                                        }
+                                    });
+                                    
+                                    const textBottom = textContent.getBoundingClientRect().bottom;
+                                    const wrapperTop = gridWrapper.getBoundingClientRect().top;
+                                    
+                                    // Primary goal: position flush with text bottom
+                                    // Only push down if left column items extend below text (to prevent overlap)
+                                    let desiredTop = textBottom;
+                                    if (maxLeftColumnBottom > textBottom + 10) {
+                                        // Left column extends below text, position after it to avoid overlap
+                                        desiredTop = maxLeftColumnBottom + 20;
+                                    }
+                                    
+                                    const gap = wrapperTop - desiredTop;
+                                    if (Math.abs(gap) > 0.5) {
+                                        gridWrapper.style.marginTop = `-${gap}px`;
+                                    }
+                                }, 150);
+                            }
+                            
+                            // Also reposition wrapper after initial render - keep flush with text
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    // Calculate where left column items end
+                                    let maxLeftColumnBottom = 0;
+                                    itemsBeforeSplit.forEach(item => {
+                                        if (item.offsetParent !== null && !item.hasAttribute('data-original-hidden')) {
+                                            const itemRect = item.getBoundingClientRect();
+                                            maxLeftColumnBottom = Math.max(maxLeftColumnBottom, itemRect.bottom);
+                                        }
+                                    });
+                                    
+                                    const textBottom = textContent.getBoundingClientRect().bottom;
+                                    const wrapperTop = gridWrapper.getBoundingClientRect().top;
+                                    
+                                    // Primary goal: position flush with text bottom
+                                    // Only push down if left column items extend below text (to prevent overlap)
+                                    let desiredTop = textBottom;
+                                    if (maxLeftColumnBottom > textBottom + 10) {
+                                        // Left column extends below text, position after it to avoid overlap
+                                        desiredTop = maxLeftColumnBottom + 20;
+                                    }
+                                    
+                                    const gap = wrapperTop - desiredTop;
+                                    if (Math.abs(gap) > 0.5) {
+                                        gridWrapper.style.marginTop = `-${gap}px`;
+                                    }
+                                });
+                            });
+                        });
+                    }
+                }
+                
+                // Run after page loads and images load
+                function runAdjustment() {
+                    setTimeout(adjustMediaFlow, 400);
+                }
+                
+                runAdjustment();
+                let resizeTimeout;
+                window.addEventListener('resize', function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(runAdjustment, 400);
+                });
+                
+                // Wait for images to load
+                const images = document.querySelectorAll('.item-image, .project-poster, .video-container iframe, .video-container video');
+                let loadedCount = 0;
+                const totalImages = images.length;
+                
+                if (totalImages === 0) {
+                    runAdjustment();
+                } else {
+                    images.forEach(img => {
+                        if (img.complete || img.tagName === 'IFRAME' || img.tagName === 'VIDEO') {
+                            loadedCount++;
+                        } else {
+                            img.addEventListener('load', function() {
+                                loadedCount++;
+                                if (loadedCount === totalImages) {
+                                    runAdjustment();
+                                }
+                            });
+                            img.addEventListener('error', function() {
+                                loadedCount++;
+                                if (loadedCount === totalImages) {
+                                    runAdjustment();
+                                }
+                            });
+                        }
+                    });
+                    if (loadedCount === totalImages) {
+                        runAdjustment();
+                    }
+                }
+            }
         });
+        
+        /* Slideshow: each .slideshow-container keeps index in data-current-slide; clones in grid strip duplicate markup so buttons use same handlers. */
+        function getSlideshowContainer(element) {
+            return element.closest('.slideshow-container');
+        }
+        
+        function getSlideshowState(container) {
+            const current = parseInt(container.dataset.currentSlide || '0');
+            const slideshowImages = container.querySelector('.slideshow-images');
+            const slides = slideshowImages ? slideshowImages.querySelectorAll('.slideshow-slide') : [];
+            return {
+                current,
+                total: slides.length,
+                slideshowImages,
+                indicators: container.querySelectorAll('.slideshow-indicator'),
+                counter: container.querySelector('[id="slideshow-current"]') || container.querySelector('.slideshow-counter span:first-child')
+            };
+        }
+        
+        function setSlideshowState(container, index) {
+            container.dataset.currentSlide = index.toString();
+            const state = getSlideshowState(container);
+            
+            // Update transform
+            if (state.slideshowImages) {
+                const offset = -index * 100;
+                state.slideshowImages.style.transform = `translateX(${offset}%)`;
+            }
+            
+            // Update indicators
+            state.indicators.forEach((indicator, idx) => {
+                if (idx === index) {
+                    indicator.classList.add('active');
+                    indicator.style.background = 'rgba(0, 0, 255, 0.8)';
+                } else {
+                    indicator.classList.remove('active');
+                    indicator.style.background = 'transparent';
+                }
+            });
+            
+            // Update counter
+            if (state.counter) {
+                state.counter.textContent = index + 1;
+            }
+        }
+        
+        function changeSlideshowSlide(direction, buttonElement) {
+            const container = getSlideshowContainer(buttonElement);
+            if (!container) return;
+            
+            const state = getSlideshowState(container);
+            if (state.total === 0) return;
+            
+            let newIndex = state.current + direction;
+            
+            if (newIndex < 0) {
+                newIndex = state.total - 1;
+            } else if (newIndex >= state.total) {
+                newIndex = 0;
+            }
+            
+            setSlideshowState(container, newIndex);
+        }
+        
+        function goToSlideshowSlide(index, buttonElement) {
+            const container = getSlideshowContainer(buttonElement);
+            if (!container) return;
+            
+            const state = getSlideshowState(container);
+            if (index < 0 || index >= state.total) return;
+            
+            setSlideshowState(container, index);
+        }
+        
+        // Initialize all slideshows when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const slideshows = document.querySelectorAll('.slideshow-container');
+            slideshows.forEach((container, idx) => {
+                // Initialize first slide (index 0)
+                setSlideshowState(container, 0);
+            });
+        });
+        
         function copyShareLink() {
             const shareLink = document.getElementById('shareLink');
             shareLink.select();

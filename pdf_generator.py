@@ -1,4 +1,8 @@
+"""
+PDF export for gallery items using ReportLab (single project or full gallery).
 
+Used by Flask routes in app.py: /gallery/<id>/pdf and /gallery/pdf.
+"""
 
 import os
 import io
@@ -17,6 +21,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GalleryPDFGenerator:
+    """Builds PDF documents from gallery item dicts (title, body, images where possible)."""
+
     def __init__(self):
         self.page_width, self.page_height = A4
         self.margin = 0.75 * inch
@@ -151,11 +157,19 @@ class GalleryPDFGenerator:
                 story.append(tags_para)
                 story.append(Spacer(1, 20))
             
-            project_link = gallery_item.get('project_link')
-            if project_link:
-                link_text = f"Project Link: {project_link}"
-                link_para = Paragraph(link_text, self.creator_style)
-                story.append(link_para)
+            # Handle multiple project links
+            project_links = gallery_item.get('project_links', [])
+            if not project_links:
+                # Backward compatibility: check for old single project_link
+                project_link = gallery_item.get('project_link')
+                if project_link:
+                    project_links = [{'title': 'View Project', 'url': project_link}]
+            
+            if project_links:
+                for link in project_links:
+                    link_text = f"{link.get('title', 'Project Link')}: {link.get('url', '')}"
+                    link_para = Paragraph(link_text, self.creator_style)
+                    story.append(link_para)
             
             doc.build(story)
             logger.info(f"Successfully generated PDF: {output_path}")

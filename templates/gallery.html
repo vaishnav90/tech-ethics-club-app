@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery - Tech & Ethics Club</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.3') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    {# Projects listing: optional course filter from Flask; search/filters mostly client-side JS in this file. #}
     <div class="page gallery-page-container">
         
         <div class="grid-background"></div>
@@ -81,7 +82,7 @@
 
         
         <main class="content gallery-page">
-            
+            {# Flash alerts from Flask (e.g. after delete or errors) #}
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     <div class="flash-messages">
@@ -94,7 +95,7 @@
                 {% endif %}
             {% endwith %}
 
-            
+            {# Client-side search + creator/tag dropdowns; pairs with script at bottom of page #}
             <div class="search-section">
                 <div class="search-container">
                     <div class="search-input-group">
@@ -187,7 +188,6 @@
                                 {% if course.course_code %}
                                     <span class="course-button-code">{{ course.course_code }}</span>
                                 {% endif %}
-                                <div class="course-button-count">{{ course_projects|length }} project{{ 's' if course_projects|length != 1 else '' }}</div>
                                 {% if course.description %}
                                     <p class="course-button-description">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
                                 {% endif %}
@@ -295,8 +295,10 @@
                              data-has-videos="{{ item.has_videos|lower }}"
                              data-has-images="{{ item.has_images|lower }}">
                             <div class="gallery-image">
-                                {% if item.has_images %}
-                                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                {% if item.image_url %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                {% elif item.additional_images and item.additional_images|length > 0 %}
+                                    <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
                                 {% elif item.has_videos %}
                                     
                                     {% set first_video = item.videos[0] %}
@@ -377,7 +379,7 @@
                                 {% if item.creators and item.creators|length > 0 and item.creators[0].city %}
                                     <div class="location-school-info">
                                         <div class="location-info">
-                                            <span class="info-label">📍 Location:</span>
+                                            <span class="info-label">Location:</span>
                                             <span class="info-value">
                                                 {% set first_creator = item.creators[0] %}
                                                 {% if first_creator.city %}{{ first_creator.city }}{% endif %}
@@ -390,7 +392,7 @@
                                     
                                     <div class="location-school-info">
                                             <div class="location-info">
-                                                <span class="info-label">📍 Location:</span>
+                                                <span class="info-label">Location:</span>
                                                 <span class="info-value">
                                                     {% if item.creator_city %}{{ item.creator_city }}{% endif %}
                                                     {% if item.creator_state %}{% if item.creator_city %}, {% endif %}{{ item.creator_state }}{% endif %}
@@ -400,38 +402,32 @@
                                     </div>
                                 {% endif %}
                                 
-                                <p class="blueprint-text">{{ item.description }}</p>
-                                {% if item.tags %}
-                                    <div class="tags-container">
-                                        {% for tag in item.tags %}
-                                            <span class="tag">{{ tag }}</span>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                                                    <div class="project-link-container">
-                                        <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="project-link">
-                                            <span class="link-text">VIEW POST</span>
-                                        </a>
-                                    </div>
+                                <p class="blueprint-text description-preview" style="white-space: pre-line;">{{ item.description }}</p>
+                                <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="read-more-btn" onclick="event.stopPropagation();">
+                                    <span class="read-more-text">READ MORE</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </a>
                             </div>
-                            <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-item-link-overlay">
-                                <span class="sr-only">View {{ item.title }}</span>
-                            </a>
                             {% if current_user.is_authenticated and current_user.is_admin %}
-                                <div class="admin-controls">
+                                <div class="admin-controls" onclick="event.stopPropagation();">
                                     <div class="admin-controls-row">
-                                        <label class="move-checkbox-label">
-                                            <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}">
+                                        <label class="move-checkbox-label" onclick="event.stopPropagation();">
+                                            <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}" onclick="event.stopPropagation();">
                                             <span class="checkbox-text">MOVE</span>
                                         </label>
-                                        <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form">
-                                            <button type="submit" class="delete-button" onclick="return confirm('Are you sure you want to delete this item?')">
+                                        <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form" onclick="event.stopPropagation();">
+                                            <button type="submit" class="delete-button" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete this item?');">
                                                 <span class="button-text">DELETE</span>
                                             </button>
                                         </form>
                                     </div>
                                 </div>
                             {% endif %}
+                            <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-item-link-overlay">
+                                <span class="sr-only">View {{ item.title }}</span>
+                            </a>
                         </div>
                     {% endfor %}
                             </div>
@@ -467,8 +463,10 @@
                                      data-has-videos="{{ item.has_videos|lower }}"
                                      data-has-images="{{ item.has_images|lower }}">
                                     <div class="gallery-image">
-                                        {% if item.has_images %}
+                                        {% if item.image_url %}
                                             <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                        {% elif item.additional_images and item.additional_images|length > 0 %}
+                                            <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
                                         {% elif item.has_videos %}
                                             
                                             {% set first_video = item.videos[0] %}
@@ -514,7 +512,7 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="gallery-content">
+                                    <div class="gallery-description">
                                         <h3 class="gallery-title">{{ item.title }}</h3>
                                         
                                         
@@ -549,7 +547,7 @@
                                         {% if item.creators and item.creators|length > 0 and item.creators[0].city %}
                                             <div class="location-school-info">
                                                 <div class="location-info">
-                                                    <span class="info-label">📍 Location:</span>
+                                                    <span class="info-label">Location:</span>
                                                     <span class="info-value">
                                                         {% set first_creator = item.creators[0] %}
                                                         {% if first_creator.city %}{{ first_creator.city }}{% endif %}
@@ -562,7 +560,7 @@
                                             
                                             <div class="location-school-info">
                                                 <div class="location-info">
-                                                    <span class="info-label">📍 Location:</span>
+                                                    <span class="info-label">Location:</span>
                                                     <span class="info-value">
                                                         {% if item.creator_city %}{{ item.creator_city }}{% endif %}
                                                         {% if item.creator_state %}{% if item.creator_city %}, {% endif %}{{ item.creator_state }}{% endif %}
@@ -572,35 +570,32 @@
                                             </div>
                                         {% endif %}
                                         
-                                        <p class="gallery-description">{{ item.description[:150] }}{% if item.description|length > 150 %}...{% endif %}</p>
-                                        
-                                        {% if item.tags %}
-                                            <div class="gallery-tags">
-                                                {% for tag in item.tags %}
-                                                    <span class="tag">{{ tag }}</span>
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                        
-                                        <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-button">
-                                            <span class="button-text">VIEW PROJECT</span>
+                                        <p class="blueprint-text description-preview" style="white-space: pre-line;">{{ item.description }}</p>
+                                        <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="read-more-btn" onclick="event.stopPropagation();">
+                                            <span class="read-more-text">READ MORE</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
                                         </a>
                                         
                                         {% if current_user.is_authenticated and current_user.is_admin %}
-                                            <div class="admin-controls">
+                                            <div class="admin-controls" onclick="event.stopPropagation();">
                                                 <div class="admin-controls-row">
-                                                    <label class="move-checkbox-label">
-                                                        <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}">
+                                                    <label class="move-checkbox-label" onclick="event.stopPropagation();">
+                                                        <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}" onclick="event.stopPropagation();">
                                                         <span class="checkbox-text">MOVE</span>
                                                     </label>
-                                                    <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form">
-                                                        <button type="submit" class="delete-button" onclick="return confirm('Are you sure you want to delete this item?')">
+                                                    <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form" onclick="event.stopPropagation();">
+                                                        <button type="submit" class="delete-button" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete this item?');">
                                                             <span class="button-text">DELETE</span>
                                                         </button>
                                                     </form>
                                                 </div>
                                             </div>
                                         {% endif %}
+                                        <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-item-link-overlay">
+                                            <span class="sr-only">View {{ item.title }}</span>
+                                        </a>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -624,8 +619,10 @@
                                  data-has-videos="{{ item.has_videos|lower }}"
                                  data-has-images="{{ item.has_images|lower }}">
                                 <div class="gallery-image">
-                                    {% if item.has_images %}
+                                    {% if item.image_url %}
                                         <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                    {% elif item.additional_images and item.additional_images|length > 0 %}
+                                        <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
                                     {% elif item.has_videos %}
                                         
                                         {% set first_video = item.videos[0] %}
@@ -671,93 +668,90 @@
                                     </div>
                                 </div>
                                 
-                                <div class="gallery-content">
-                                    <h3 class="gallery-title">{{ item.title }}</h3>
-                                    
-                                    
-                                    {% if item.creators and item.creators|length > 0 %}
-                                        <div class="creators-info">
-                                            <span class="creator-label">
-                                                {% if item.creators|length == 1 %}By:{% else %}By:{% endif %}
-                                            </span>
-                                            <div class="creators-list">
-                                                {% for creator in item.creators %}
-                                                    <div class="creator-item">
-                                                        <span class="creator-name">{{ creator.name }}</span>
-                                                        {% if creator.school %}
-                                                            <span class="creator-school">({{ creator.school }})</span>
-                                                        {% endif %}
-                                                    </div>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    {% elif item.creator_name %}
+                                <div class="gallery-description">
+                                        <h3 class="gallery-title">{{ item.title }}</h3>
                                         
-                                        <div class="creator-info">
-                                            <span class="creator-label">By:</span>
-                                            <span class="creator-name">{{ item.creator_name }}</span>
-                                            {% if item.creator_school %}
-                                                <span class="creator-school">({{ item.creator_school }})</span>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                    
-                                    
-                                    {% if item.creators and item.creators|length > 0 and item.creators[0].city %}
-                                        <div class="location-school-info">
-                                            <div class="location-info">
-                                                <span class="info-label">📍 Location:</span>
-                                                <span class="info-value">
-                                                    {% set first_creator = item.creators[0] %}
-                                                    {% if first_creator.city %}{{ first_creator.city }}{% endif %}
-                                                    {% if first_creator.state %}{% if first_creator.city %}, {% endif %}{{ first_creator.state }}{% endif %}
-                                                    {% if first_creator.country %}{% if first_creator.city or first_creator.state %}, {% endif %}{{ first_creator.country }}{% endif %}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    {% elif item.creator_city or item.creator_state or item.creator_country %}
                                         
-                                        <div class="location-school-info">
-                                            <div class="location-info">
-                                                <span class="info-label">📍 Location:</span>
-                                                <span class="info-value">
-                                                    {% if item.creator_city %}{{ item.creator_city }}{% endif %}
-                                                    {% if item.creator_state %}{% if item.creator_city %}, {% endif %}{{ item.creator_state }}{% endif %}
-                                                    {% if item.creator_country %}{% if item.creator_city or item.creator_state %}, {% endif %}{{ item.creator_country }}{% endif %}
+                                        {% if item.creators and item.creators|length > 0 %}
+                                            <div class="creators-info">
+                                                <span class="creator-label">
+                                                    {% if item.creators|length == 1 %}By:{% else %}By:{% endif %}
                                                 </span>
+                                                <div class="creators-list">
+                                                    {% for creator in item.creators %}
+                                                        <div class="creator-item">
+                                                            <span class="creator-name">{{ creator.name }}</span>
+                                                            {% if creator.school %}
+                                                                <span class="creator-school">({{ creator.school }})</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
                                             </div>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <p class="gallery-description">{{ item.description[:150] }}{% if item.description|length > 150 %}...{% endif %}</p>
-                                    
-                                    {% if item.tags %}
-                                        <div class="gallery-tags">
-                                            {% for tag in item.tags %}
-                                                <span class="tag">{{ tag }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-button">
-                                        <span class="button-text">VIEW PROJECT</span>
+                                        {% elif item.creator_name %}
+                                            
+                                            <div class="creator-info">
+                                                <span class="creator-label">By:</span>
+                                                <span class="creator-name">{{ item.creator_name }}</span>
+                                                {% if item.creator_school %}
+                                                    <span class="creator-school">({{ item.creator_school }})</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        
+                                        {% if item.creators and item.creators|length > 0 and item.creators[0].city %}
+                                            <div class="location-school-info">
+                                                <div class="location-info">
+                                                    <span class="info-label">Location:</span>
+                                                    <span class="info-value">
+                                                        {% set first_creator = item.creators[0] %}
+                                                        {% if first_creator.city %}{{ first_creator.city }}{% endif %}
+                                                        {% if first_creator.state %}{% if first_creator.city %}, {% endif %}{{ first_creator.state }}{% endif %}
+                                                        {% if first_creator.country %}{% if first_creator.city or first_creator.state %}, {% endif %}{{ first_creator.country }}{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        {% elif item.creator_city or item.creator_state or item.creator_country %}
+                                            
+                                            <div class="location-school-info">
+                                                <div class="location-info">
+                                                    <span class="info-label">Location:</span>
+                                                    <span class="info-value">
+                                                        {% if item.creator_city %}{{ item.creator_city }}{% endif %}
+                                                        {% if item.creator_state %}{% if item.creator_city %}, {% endif %}{{ item.creator_state }}{% endif %}
+                                                        {% if item.creator_country %}{% if item.creator_city or item.creator_state %}, {% endif %}{{ item.creator_country }}{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                    <p class="blueprint-text description-preview" style="white-space: pre-line;">{{ item.description }}</p>
+                                    <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="read-more-btn" onclick="event.stopPropagation();">
+                                        <span class="read-more-text">READ MORE</span>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
                                     </a>
                                     
                                     {% if current_user.is_authenticated and current_user.is_admin %}
-                                        <div class="admin-controls">
+                                        <div class="admin-controls" onclick="event.stopPropagation();">
                                             <div class="admin-controls-row">
-                                                <label class="move-checkbox-label">
-                                                    <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}">
+                                                <label class="move-checkbox-label" onclick="event.stopPropagation();">
+                                                    <input type="checkbox" class="move-checkbox" data-item-id="{{ item.id }}" onclick="event.stopPropagation();">
                                                     <span class="checkbox-text">MOVE</span>
                                                 </label>
-                                                <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form">
-                                                    <button type="submit" class="delete-button" onclick="return confirm('Are you sure you want to delete this item?')">
+                                                <form method="POST" action="{{ url_for('delete_gallery_item', item_id=item.id) }}" style="display: inline;" class="delete-form" onclick="event.stopPropagation();">
+                                                    <button type="submit" class="delete-button" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete this item?');">
                                                         <span class="button-text">DELETE</span>
                                                     </button>
                                                 </form>
                                             </div>
                                         </div>
                                     {% endif %}
+                                    <a href="{{ url_for('gallery_item', item_id=item.id) }}" class="gallery-item-link-overlay">
+                                        <span class="sr-only">View {{ item.title }}</span>
+                                    </a>
                                 </div>
                             </div>
                         {% endfor %}
@@ -801,7 +795,7 @@
     </div>
 
     <script>
-        // Gallery search functionality
+        /* Filter + search gallery cards: reads data-* on .gallery-item, toggles .search-hidden / display. */
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
             const searchDropdown = document.getElementById('searchDropdown');

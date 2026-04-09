@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    {# Admin: POST handled by app.add_gallery_item — multipart uploads, video URLs, slideshow, course assignment #}
     <div class="page">
         
         <div class="grid-background"></div>
@@ -73,6 +74,7 @@
                     </div>
                     
                     <div class="admin-form-container">
+                        {# Long form: dynamic rows for creators, videos, extra images, slideshow, project links #}
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 {% for category, message in messages %}
@@ -112,29 +114,6 @@
                                                 <div class="file-info">LinkedIn profile URL for professional connections</div>
                                             </div>
                                             
-                                            <div class="form-group">
-                                                <label class="form-label">CITY (OPTIONAL):</label>
-                                                <input type="text" name="creator_cities[]" class="form-input" placeholder="e.g., San Francisco, New York, London">
-                                                <div class="file-info">The city where they're located</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label class="form-label">STATE/PROVINCE (OPTIONAL):</label>
-                                                <input type="text" name="creator_states[]" class="form-input" placeholder="e.g., California, New York, Ontario">
-                                                <div class="file-info">The state or province where they're located</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label class="form-label">COUNTRY (OPTIONAL):</label>
-                                                <input type="text" name="creator_countries[]" class="form-input" placeholder="e.g., United States, Canada, United Kingdom">
-                                                <div class="file-info">The country where they're located</div>
-                                            </div>
-                                            
-                                            <div class="form-group">
-                                                <label class="form-label">SCHOOL (OPTIONAL):</label>
-                                                <input type="text" name="creator_schools[]" class="form-input" placeholder="e.g., Stanford University, MIT, UC Berkeley">
-                                                <div class="file-info">The school or university they attend</div>
-                                            </div>
                                         </div>
                                     </div>
                                     <button type="button" id="add-creator-btn" class="admin-button secondary" style="margin-top: 10px;">
@@ -150,6 +129,22 @@
                             
                             
                             <div class="form-group">
+                                <label class="form-label">PROJECT POSTER (OPTIONAL):</label>
+                                <div class="media-section">
+                                    <div class="form-group">
+                                        <label for="project_poster" class="form-label">POSTER IMAGE:</label>
+                                        <input type="file" id="project_poster" name="project_poster" class="form-file" accept="image/*">
+                                        <div class="file-info">Project poster that will be displayed prominently on the gallery page (Max 15MB, will be automatically optimized)</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="project_poster_link" class="form-label">POSTER LINK (OPTIONAL):</label>
+                                        <input type="url" id="project_poster_link" name="project_poster_link" class="form-input" placeholder="https://drive.google.com/... or https://example.com/poster">
+                                        <div class="file-info">Link to view full poster (e.g., Google Drive link). Poster will be clickable if link is provided.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
                                 <label class="form-label">IMAGES (OPTIONAL):</label>
                                 <div class="media-section">
                                     <div class="form-group">
@@ -157,13 +152,25 @@
                                         <input type="file" id="thumbnail_image" name="thumbnail_image" class="form-file" accept="image/*">
                                         <div class="file-info" id="thumbnail_info">Main image for your project (Max 15MB per file, will be automatically optimized)</div>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="thumbnail_image_link" class="form-label">MAIN IMAGE LINK (OPTIONAL):</label>
+                                        <input type="url" id="thumbnail_image_link" name="thumbnail_image_link" class="form-input" placeholder="https://drive.google.com/... or https://example.com/poster">
+                                        <div class="file-info">Link to view full image (e.g., Google Drive link for poster). Image will be clickable if link is provided.</div>
+                                    </div>
                                     
                                     <div class="form-group">
                                         <label class="form-label">ADDITIONAL IMAGES (OPTIONAL):</label>
                                         <div id="additional-images-container">
                                             <div class="additional-image-entry" data-image-index="0">
-                                                <input type="file" name="additional_images[]" class="form-file" accept="image/*">
-                                                <div class="file-info">Additional image 1 (Max 15MB per file, will be automatically optimized)</div>
+                                                <div class="form-group">
+                                                    <input type="file" name="additional_images[]" class="form-file" accept="image/*">
+                                                    <div class="file-info">Additional image 1 (Max 15MB per file, will be automatically optimized)</div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="form-label">IMAGE LINK (OPTIONAL):</label>
+                                                    <input type="url" name="additional_image_links[]" class="form-input" placeholder="https://drive.google.com/... or https://example.com/image">
+                                                    <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
+                                                </div>
                                             </div>
                                         </div>
                                         <button type="button" id="add-image-btn" class="admin-button secondary" style="margin-top: 10px;">
@@ -173,6 +180,34 @@
                                 </div>
                             </div>
                             
+                            <div class="form-group">
+                                <label class="form-label">IMAGE SLIDESHOW (OPTIONAL):</label>
+                                <div class="media-section">
+                                    <div class="file-info" style="margin-bottom: 15px;">Create a slideshow of images for your project. Great for displaying multiple images in an organized way.</div>
+                                    <div class="form-group">
+                                        <label for="slideshow_title" class="form-label">SLIDESHOW TITLE (OPTIONAL):</label>
+                                        <input type="text" id="slideshow_title" name="slideshow_title" class="form-input" placeholder="e.g., Project Screenshots, Design Process, Final Results">
+                                        <div class="file-info">Optional title that will be displayed above the slideshow</div>
+                                    </div>
+                                    <div id="slideshow-images-container">
+                                        <div class="slideshow-image-entry" data-slideshow-index="0">
+                                            <div class="form-group">
+                                                <label class="form-label">SLIDESHOW IMAGE 1:</label>
+                                                <input type="file" name="slideshow_images[]" class="form-file" accept="image/*">
+                                                <div class="file-info">Slideshow image 1 (Max 15MB per file, will be automatically optimized)</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">IMAGE LINK (OPTIONAL):</label>
+                                                <input type="url" name="slideshow_image_links[]" class="form-input" placeholder="https://drive.google.com/... or https://example.com/image">
+                                                <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-slideshow-image-btn" class="admin-button secondary" style="margin-top: 10px;">
+                                        <span class="button-text">+ ADD ANOTHER SLIDESHOW IMAGE</span>
+                                    </button>
+                                </div>
+                            </div>
                             
                             <div class="form-group">
                                 <label class="form-label">VIDEOS (OPTIONAL):</label>
@@ -192,7 +227,7 @@
                                             <div class="form-group">
                                                 <label class="form-label">VIDEO THUMBNAIL (OPTIONAL):</label>
                                                 <input type="file" name="video_thumbnails[]" class="form-file" accept="image/*">
-                                                <div class="file-info">Custom thumbnail for this video (if not provided, platform thumbnail will be used)</div>
+                                                <div class="file-info">Custom thumbnail for this video (if not provided, a frame from the first 2 seconds will be used for video files, or platform thumbnail for YouTube/Vimeo)</div>
                                             </div>
                                         </div>
                                     </div>
@@ -203,9 +238,31 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="project_link" class="form-label">PROJECT LINK (OPTIONAL):</label>
-                                <input type="url" id="project_link" name="project_link" class="form-input" placeholder="https://example.com/project">
-                                <div class="file-info">Add a link to your project, portfolio, or related resource</div>
+                                <label class="form-label">PROJECT LINKS (OPTIONAL):</label>
+                                <div class="media-section">
+                                    <div id="project-links-container">
+                                        <div class="project-link-entry" data-link-index="0">
+                                            <div class="form-group">
+                                                <label class="form-label">LINK 1 TITLE:</label>
+                                                <input type="text" name="project_link_titles[]" class="form-input" placeholder="e.g., View Project, GitHub Repository, Live Demo">
+                                                <div class="file-info">Give your link a descriptive title</div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">LINK 1 URL:</label>
+                                                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                                    <input type="url" name="project_link_urls[]" class="form-input" placeholder="https://example.com/project" style="flex: 1;">
+                                                    <button type="button" class="remove-project-link-btn admin-button secondary" style="padding: 10px 15px; display: none;">
+                                                        <span class="button-text">REMOVE</span>
+                                                    </button>
+                                                </div>
+                                                <div class="file-info">Add a link to your project, portfolio, or related resource</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-project-link-btn" class="admin-button secondary" style="margin-top: 10px;">
+                                        <span class="button-text">+ ADD ANOTHER LINK</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -221,10 +278,10 @@
                                 <div class="file-info">Assign this project to a specific course</div>
                             </div>
                             
-                            <div class="form-group">
+                            <div class="form-group" id="tags-group">
                                 <label for="tags" class="form-label">TAGS (OPTIONAL):</label>
                                 <input type="text" id="tags" name="tags" class="form-input" placeholder="computer science, robotics, AI, web development">
-                                <div class="file-info">Separate multiple tags with commas (e.g., computer science, robotics, AI)</div>
+                                <div class="file-info">Separate multiple tags with commas (e.g., computer science, robotics, AI). Tags are not available for projects assigned to a course.</div>
                             </div>
                             
                             
@@ -243,7 +300,7 @@
         </main>
         
         <script>
-            // File size validation
+            /* Client-side: file size checks, dynamic rows (extra images, videos, creators, slideshow, links). */
             const maxFileSize = 15 * 1024 * 1024; // 15MB in bytes
             
             function validateFileSize(input) {
@@ -268,13 +325,20 @@
                 imageEntry.setAttribute('data-image-index', additionalImageIndex);
                 
                 imageEntry.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        <input type="file" name="additional_images[]" class="form-file" accept="image/*" style="flex: 1;">
-                        <button type="button" class="remove-image-btn admin-button secondary" style="padding: 8px 12px; font-size: 0.8rem;">
-                            <span class="button-text">- REMOVE</span>
-                        </button>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <input type="file" name="additional_images[]" class="form-file" accept="image/*" style="flex: 1;">
+                            <button type="button" class="remove-image-btn admin-button secondary" style="padding: 8px 12px; font-size: 0.8rem;">
+                                <span class="button-text">- REMOVE</span>
+                            </button>
+                        </div>
+                        <div class="file-info">Additional image ${additionalImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
                     </div>
-                    <div class="file-info">Additional image ${additionalImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
+                    <div class="form-group">
+                        <label class="form-label">IMAGE LINK (OPTIONAL):</label>
+                        <input type="url" name="additional_image_links[]" class="form-input" placeholder="https://drive.google.com/... or https://example.com/image">
+                        <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
+                    </div>
                 `;
                 
                 container.appendChild(imageEntry);
@@ -284,6 +348,57 @@
                 const removeBtn = imageEntry.querySelector('.remove-image-btn');
                 removeBtn.addEventListener('click', function() {
                     imageEntry.remove();
+                });
+                
+                // Add file size validation
+                const fileInput = imageEntry.querySelector('input[type="file"]');
+                fileInput.addEventListener('change', function() {
+                    validateFileSize(this);
+                });
+            }
+            
+            // Slideshow Images management
+            let slideshowImageIndex = 1;
+            
+            function addSlideshowImageEntry() {
+                const container = document.getElementById('slideshow-images-container');
+                const imageEntry = document.createElement('div');
+                imageEntry.className = 'slideshow-image-entry';
+                imageEntry.setAttribute('data-slideshow-index', slideshowImageIndex);
+                
+                imageEntry.innerHTML = `
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <label class="form-label">SLIDESHOW IMAGE ${slideshowImageIndex + 1}:</label>
+                                <input type="file" name="slideshow_images[]" class="form-file" accept="image/*">
+                                <div class="file-info">Slideshow image ${slideshowImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
+                            </div>
+                            <button type="button" class="remove-slideshow-image-btn admin-button secondary" style="padding: 8px 12px; font-size: 0.8rem; align-self: flex-end; margin-bottom: 10px;">
+                                <span class="button-text">- REMOVE</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">IMAGE LINK (OPTIONAL):</label>
+                        <input type="url" name="slideshow_image_links[]" class="form-input" placeholder="https://drive.google.com/... or https://example.com/image">
+                        <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
+                    </div>
+                `;
+                
+                container.appendChild(imageEntry);
+                slideshowImageIndex++;
+                
+                // Add remove functionality
+                const removeBtn = imageEntry.querySelector('.remove-slideshow-image-btn');
+                removeBtn.addEventListener('click', function() {
+                    imageEntry.remove();
+                });
+                
+                // Add file size validation
+                const fileInput = imageEntry.querySelector('input[type="file"]');
+                fileInput.addEventListener('change', function() {
+                    validateFileSize(this);
                 });
             }
             
@@ -314,29 +429,6 @@
                         <div class="file-info">LinkedIn profile URL for professional connections</div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">CITY (OPTIONAL):</label>
-                        <input type="text" name="creator_cities[]" class="form-input" placeholder="e.g., San Francisco, New York, London">
-                        <div class="file-info">The city where they're located</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">STATE/PROVINCE (OPTIONAL):</label>
-                        <input type="text" name="creator_states[]" class="form-input" placeholder="e.g., California, New York, Ontario">
-                        <div class="file-info">The state or province where they're located</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">COUNTRY (OPTIONAL):</label>
-                        <input type="text" name="creator_countries[]" class="form-input" placeholder="e.g., United States, Canada, United Kingdom">
-                        <div class="file-info">The country where they're located</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">SCHOOL (OPTIONAL):</label>
-                        <input type="text" name="creator_schools[]" class="form-input" placeholder="e.g., Stanford University, MIT, UC Berkeley">
-                        <div class="file-info">The school or university they attend</div>
-                    </div>
                     
                     <button type="button" class="remove-creator-btn admin-button secondary" style="margin-top: 10px;">
                         <span class="button-text">- REMOVE THIS CREATOR</span>
@@ -376,7 +468,7 @@
                     <div class="form-group">
                         <label class="form-label">VIDEO THUMBNAIL (OPTIONAL):</label>
                         <input type="file" name="video_thumbnails[]" class="form-file" accept="image/*">
-                        <div class="file-info">Custom thumbnail for this video (if not provided, platform thumbnail will be used)</div>
+                        <div class="file-info">Custom thumbnail for this video (if not provided, a frame from the first 2 seconds will be used for video files, or platform thumbnail for YouTube/Vimeo)</div>
                     </div>
                     <button type="button" class="remove-video-btn admin-button secondary" style="margin-top: 10px;">
                         <span class="button-text">- REMOVE THIS VIDEO</span>
@@ -393,17 +485,94 @@
                 });
             }
             
+            // Project links functionality
+            let projectLinkIndex = 1;
+            function addProjectLinkEntry() {
+                const container = document.getElementById('project-links-container');
+                const projectLinkEntry = document.createElement('div');
+                projectLinkEntry.className = 'project-link-entry';
+                projectLinkEntry.setAttribute('data-link-index', projectLinkIndex);
+                projectLinkEntry.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">LINK ${projectLinkIndex + 1} TITLE:</label>
+                        <input type="text" name="project_link_titles[]" class="form-input" placeholder="e.g., View Project, GitHub Repository, Live Demo">
+                        <div class="file-info">Give your link a descriptive title</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">LINK ${projectLinkIndex + 1} URL:</label>
+                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                            <input type="url" name="project_link_urls[]" class="form-input" placeholder="https://example.com/project" style="flex: 1;">
+                            <button type="button" class="remove-project-link-btn admin-button secondary" style="padding: 10px 15px;">
+                                <span class="button-text">REMOVE</span>
+                            </button>
+                        </div>
+                        <div class="file-info">Add a link to your project, portfolio, or related resource</div>
+                    </div>
+                `;
+                
+                container.appendChild(projectLinkEntry);
+                projectLinkIndex++;
+                
+                // Show remove button on first entry if there are multiple entries
+                updateProjectLinkRemoveButtons();
+                
+                // Add remove functionality
+                const removeBtn = projectLinkEntry.querySelector('.remove-project-link-btn');
+                removeBtn.addEventListener('click', function() {
+                    projectLinkEntry.remove();
+                    updateProjectLinkRemoveButtons();
+                });
+            }
+            
+            function updateProjectLinkRemoveButtons() {
+                const entries = document.querySelectorAll('.project-link-entry');
+                entries.forEach((entry, index) => {
+                    const removeBtn = entry.querySelector('.remove-project-link-btn');
+                    if (removeBtn) {
+                        // Show remove button if there's more than one entry
+                        removeBtn.style.display = entries.length > 1 ? 'block' : 'none';
+                    }
+                });
+            }
+            
+            // Initialize remove button visibility
+            document.addEventListener('DOMContentLoaded', function() {
+                updateProjectLinkRemoveButtons();
+            });
+            
             // Add event listeners
             document.getElementById('add-image-btn').addEventListener('click', addAdditionalImageEntry);
+            document.getElementById('add-slideshow-image-btn').addEventListener('click', addSlideshowImageEntry);
             document.getElementById('add-creator-btn').addEventListener('click', addCreatorEntry);
             document.getElementById('add-video-btn').addEventListener('click', addVideoEntry);
+            document.getElementById('add-project-link-btn').addEventListener('click', addProjectLinkEntry);
+            
+            // Hide/show tags field based on course selection
+            const courseSelect = document.getElementById('course_id');
+            const tagsGroup = document.getElementById('tags-group');
+            const tagsInput = document.getElementById('tags');
+            
+            function toggleTagsField() {
+                if (courseSelect.value && courseSelect.value !== '') {
+                    tagsGroup.style.display = 'none';
+                    tagsInput.value = ''; // Clear tags if course is selected
+                } else {
+                    tagsGroup.style.display = 'block';
+                }
+            }
+            
+            courseSelect.addEventListener('change', toggleTagsField);
+            toggleTagsField(); // Check on page load
             
             document.getElementById('thumbnail_image').addEventListener('change', function() {
                 validateFileSize(this);
             });
             
-            document.getElementById('additional_images').addEventListener('change', function() {
-                validateFileSize(this);
+            // Add file size validation to all file inputs (including dynamically added ones)
+            document.addEventListener('change', function(e) {
+                if (e.target.matches('input[type="file"].form-file')) {
+                    validateFileSize(e.target);
+                }
             });
             
             
