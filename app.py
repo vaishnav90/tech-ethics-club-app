@@ -8,6 +8,8 @@ Sections worth knowing:
   • PDF: GalleryPDFGenerator for single-item and full-gallery exports.
   • Video thumbnails: VideoThumbnailExtractor when saving gallery items with video URLs.
   • Blog: separate blog_storage module; routes under /blog.
+  • CIS news: cis_news_storage (GCS cis_news.json); any logged-in user may post;
+    delete own posts or any if admin / CIS_NEWS_EDITOR_EMAILS.
 
 Config: SECRET_KEY, STORAGE_BUCKET, optional GAE_ENV. Local GCS often uses
 tech-ethics-club-sa-key.json (see CloudStorageManager).
@@ -24,6 +26,7 @@ from cloud_storage import cloud_storage
 from cloud_user import CloudUser
 from image_optimizer import ImageOptimizer
 from blog_storage import blog_storage
+from cis_news_storage import cis_news_storage
 from video_thumbnail_extractor import VideoThumbnailExtractor
 from pdf_generator import GalleryPDFGenerator
 
@@ -32,6 +35,31 @@ app = Flask(__name__)
 
 
 print("🚀 Blog storage initialized")
+
+CIS_NEWS_EDITOR_EMAILS = frozenset(
+    {
+        "vaishnavanand90@gmail.com",
+        "asherburdeny@gmail.com",
+        "amazingadityab@gmail.com",
+        "chrisho2009@gmail.com",
+    }
+)
+
+
+def user_can_manage_cis_news():
+    """Moderators: admins or named editors (can delete any CIS news item)."""
+    return current_user.is_authenticated and (
+        current_user.is_admin or current_user.email in CIS_NEWS_EDITOR_EMAILS
+    )
+
+
+def user_can_delete_cis_news_item(item):
+    if not current_user.is_authenticated or not item:
+        return False
+    if user_can_manage_cis_news():
+        return True
+    author = (item.get("created_by_email") or "").strip().lower()
+    return author and author == (current_user.email or "").strip().lower()
 
 
 
@@ -1285,6 +1313,81 @@ def delete_blog_post(post_id):
         flash(f'Error deleting blog post: {str(e)}', 'error')
     
     return redirect(url_for('blog'))
+
+
+@app.route("/cis-news", methods=["GET", "POST"])
+def cis_news():
+    if request.method == "POST":
+        if not current_user.is_authenticated:
+            flash("Please log in to post CIS news.", "error")
+            return redirect(url_for("login"))
+
+        title = (request.form.get("title") or "").strip()
+        body = (request.form.get("body") or "").strip()
+        image_file = request.files.get("image")
+
+        if not title or not body:
+            flash("Headline and content are required.", "error")
+            return redirect(url_for("cis_news"))
+
+        image_url = None
+        if image_file and image_file.filename:
+            allowed = (".jpg", ".jpeg", ".png", ".gif", ".webp")
+            ext = os.path.splitext(image_file.filename)[1].lower()
+            if ext not in allowed:
+                flash("Please upload a JPG, PNG, GIF, or WebP image.", "error")
+                return redirect(url_for("cis_news"))
+            try:
+                optimized = image_optimizer.optimize_image(
+                    image_file, image_file.filename
+                )
+                fname = image_optimizer.get_optimized_filename(image_file.filename)
+                image_url = cloud_storage.upload_file(
+                    optimized, fname, "cis_news_images"
+                )
+                if not image_url:
+                    flash(
+                        "Image upload failed. Try again or post without an image.",
+                        "error",
+                    )
+                    return redirect(url_for("cis_news"))
+            except Exception as e:
+                flash(f"Could not process image: {str(e)}", "error")
+                return redirect(url_for("cis_news"))
+
+        created = cis_news_storage.add_item(
+            title, body, image_url, current_user.email
+        )
+        if created:
+            flash("News posted.", "success")
+        else:
+            flash("Could not save news. Please try again.", "error")
+        return redirect(url_for("cis_news"))
+
+    items = cis_news_storage.get_all_items()
+    return render_template(
+        "cis_news.html",
+        cis_news_items=items,
+        can_manage_cis_news=user_can_manage_cis_news(),
+    )
+
+
+@app.route("/cis-news/delete/<item_id>", methods=["POST"])
+@login_required
+def delete_cis_news(item_id):
+    item = cis_news_storage.get_item_by_id(item_id)
+    if not item:
+        flash("That news item was not found.", "error")
+        return redirect(url_for("cis_news"))
+    if not user_can_delete_cis_news_item(item):
+        flash("You can only delete your own posts unless you are a moderator.", "error")
+        return redirect(url_for("cis_news"))
+    if cis_news_storage.delete_item(item_id):
+        flash("News item removed.", "success")
+    else:
+        flash("Item not found or could not be deleted.", "error")
+    return redirect(url_for("cis_news"))
+
 
 @app.route('/submit-contact', methods=['POST'])
 def submit_contact():

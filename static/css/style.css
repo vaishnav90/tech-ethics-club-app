@@ -560,7 +560,7 @@ body {
 }
 
 
-.blog-page, .blog-post-page, .add-blog-post-page, .edit-blog-post-page {
+.blog-page, .blog-post-page, .add-blog-post-page, .edit-blog-post-page, .cis-news-page {
     display: block !important;
     max-width: none !important;
     width: 100% !important;
@@ -5531,5 +5531,219 @@ html {
     .paragraph-image-column {
         order: -1; 
     }
+}
+
+/* --- CIS News --- */
+.navigation .nav-button.nav-button-active {
+    background: rgba(0, 51, 160, 0.12);
+    border-color: var(--blueprint-blue);
+    box-shadow: inset 0 0 0 1px var(--blueprint-blue);
+}
+
+/* main has both .content and .cis-news-page — not a parent/child pair */
+.content.cis-news-page {
+    display: block;
+    grid-template-columns: none;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 40px 20px;
+}
+
+.cis-news-lead {
+    max-width: 52rem;
+}
+
+.cis-news-compose {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.cis-news-login-cta {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.cis-news-login-msg {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+a.cis-news-login-link {
+    text-decoration: none;
+    display: inline-block;
+}
+
+.cis-news-login-after {
+    flex: 1;
+    min-width: 200px;
+    line-height: 1.5;
+}
+
+.cis-news-form {
+    margin-top: 1rem;
+}
+
+.cis-news-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .cis-news-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cis-news-file-group .cis-news-file {
+    padding: 0.5rem 0;
+    border: none;
+    background: transparent;
+}
+
+.cis-news-hint {
+    font-size: 0.8rem;
+    color: var(--blueprint-dark-blue);
+    margin-top: 0.35rem;
+    opacity: 0.9;
+}
+
+.cis-news-textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.cis-news-form-actions {
+    margin-top: 1rem;
+}
+
+.cis-news-submit {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.cis-news-feed-section {
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.cis-news-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    border: 2px dashed var(--blueprint-blue);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.cis-news-list {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.cis-news-list-item {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.cis-news-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--blueprint-blue);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: box-shadow 0.25s ease;
+}
+
+.cis-news-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 160, 0.12);
+}
+
+.cis-news-card-media {
+    width: 100%;
+    height: min(38vh, 380px);
+    min-height: 160px;
+    background: rgba(0, 40, 120, 0.06);
+    border-bottom: 2px solid var(--blueprint-blue);
+    overflow: hidden;
+}
+
+.cis-news-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.cis-news-card-body {
+    padding: 1.25rem 1.35rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.cis-news-card-title {
+    font-size: 1.2rem;
+    color: var(--blueprint-blue);
+    margin: 0;
+    line-height: 1.35;
+}
+
+.cis-news-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: var(--blueprint-dark-blue);
+}
+
+.cis-news-by {
+    color: var(--blueprint-blue);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.cis-news-card-text {
+    white-space: pre-wrap;
+    color: #1a2744;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    flex: 1;
+}
+
+.cis-news-delete-form {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 51, 160, 0.15);
+}
+
+.cis-news-delete {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.9rem;
 }
 

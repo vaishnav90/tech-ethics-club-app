@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIS News - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.3') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="page">
+
+        <div class="grid-background"></div>
+
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">TECH & ETHICS CLUB</h1>
+                <div class="dotted-line"></div>
+            </div>
+            <div class="header-right">
+                <div class="blueprint-info">
+                    <div class="info-item">
+                        <span class="label">PAGE:</span>
+                        <span class="value">CIS NEWS</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">VERSION:</span>
+                        <span class="value">1.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">STATUS:</span>
+                        <span class="value">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <nav class="navigation">
+            <div class="nav-container">
+                <a href="/" class="nav-button">
+                    <span class="nav-text">HOME</span>
+                </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">TEAM</span>
+                </a>
+                <a href="/gallery" class="nav-button">
+                    <span class="nav-text">PROJECTS</span>
+                </a>
+                <a href="/blog" class="nav-button">
+                    <span class="nav-text">BLOG</span>
+                </a>
+                <a href="{{ url_for('cis_news') }}" class="nav-button nav-button-active">
+                    <span class="nav-text">CIS NEWS</span>
+                </a>
+                <a href="/contact" class="nav-button">
+                    <span class="nav-text">CONTACT US</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                        <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD POST</span>
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <div class="page-marker left">CIS</div>
+        <div class="page-marker right">1.0</div>
+
+        <main class="content cis-news-page">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">
+                                <span class="flash-text">{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <section class="section blueprint-section animate-in cis-news-hero compact">
+                <div class="section-header compact">
+                    <h2 class="section-title">CIS NEWS</h2>
+                    <div class="section-line"></div>
+                </div>
+                <div class="text-content compact">
+                    <p class="blueprint-text compact cis-news-lead">
+                        Short updates from the CIS program—events, wins, and announcements. Newest first.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section blueprint-section animate-in cis-news-feed-section">
+                <div class="section-header compact">
+                    <h2 class="section-title">FEED</h2>
+                    <div class="section-line"></div>
+                </div>
+
+                {% if not cis_news_items %}
+                <div class="cis-news-empty blueprint-text">
+                    No updates yet. Check back soon{% if current_user.is_authenticated %}—or post an update below{% else %}—or log in to post below{% endif %}.
+                </div>
+                {% else %}
+                <ul class="cis-news-list">
+                    {% for item in cis_news_items %}
+                    <li class="cis-news-list-item">
+                    <article class="cis-news-card">
+                        {% if item.image_url %}
+                        <div class="cis-news-card-media">
+                            <img src="{{ item.image_url }}" alt="" loading="lazy" class="cis-news-card-img">
+                        </div>
+                        {% endif %}
+                        <div class="cis-news-card-body">
+                            <h3 class="cis-news-card-title">{{ item.title }}</h3>
+                            <div class="cis-news-card-meta">
+                                <span class="cis-news-date">{{ (item.created_at or '')[:10] }}</span>
+                                {% if item.created_by_email %}
+                                <span class="cis-news-by">{{ item.created_by_email }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="cis-news-card-text">{{ item.body }}</div>
+                            {% if current_user.is_authenticated and (can_manage_cis_news or (item.created_by_email and (item.created_by_email|lower == (current_user.email or '')|lower))) %}
+                            <form class="cis-news-delete-form" method="POST" action="{{ url_for('delete_cis_news', item_id=item.id) }}" onsubmit="return confirm('Delete this news item?');">
+                                <button type="submit" class="delete-btn cis-news-delete">DELETE</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </article>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </section>
+
+            {% if current_user.is_authenticated %}
+            <section class="section blueprint-section animate-in cis-news-compose">
+                <div class="section-header compact">
+                    <h2 class="section-title">POST UPDATE</h2>
+                    <div class="section-line"></div>
+                </div>
+                <form class="cis-news-form" method="POST" action="{{ url_for('cis_news') }}" enctype="multipart/form-data">
+                    <div class="cis-news-form-grid">
+                        <div class="form-group">
+                            <label for="cn-title" class="form-label">HEADLINE</label>
+                            <input type="text" id="cn-title" name="title" class="form-input" required maxlength="200" placeholder="e.g., Regional fair — team advances">
+                        </div>
+                        <div class="form-group cis-news-file-group">
+                            <label for="cn-image" class="form-label">IMAGE (OPTIONAL)</label>
+                            <input type="file" id="cn-image" name="image" class="form-input cis-news-file" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp">
+                            <p class="cis-news-hint">JPG, PNG, GIF, or WebP. Large files are optimized automatically.</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cn-body" class="form-label">CONTENT</label>
+                        <textarea id="cn-body" name="body" class="form-textarea cis-news-textarea" rows="6" required placeholder="What happened? Dates, links, or next steps…"></textarea>
+                    </div>
+                    <div class="cis-news-form-actions">
+                        <button type="submit" class="read-more-btn cis-news-submit">PUBLISH</button>
+                    </div>
+                </form>
+            </section>
+            {% else %}
+            <section class="section blueprint-section animate-in cis-news-login-cta">
+                <div class="section-header compact">
+                    <h2 class="section-title">POST UPDATE</h2>
+                    <div class="section-line"></div>
+                </div>
+                <p class="blueprint-text compact cis-news-login-msg">
+                    <a href="{{ url_for('login') }}" class="read-more-btn cis-news-login-link">LOG IN</a>
+                    <span class="cis-news-login-after">to add CIS news. Any club account can post; you can delete your own posts.</span>
+                </p>
+            </section>
+            {% endif %}
+
+        </main>
+    </div>
+</body>
+</html>
