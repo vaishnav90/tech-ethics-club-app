@@ -120,6 +120,9 @@
                         <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
                             <span class="nav-text">ADD ITEM</span>
                         </a>
+                        <a href="{{ url_for('manage_admins') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ADMIN</span>
+                        </a>
                     {% endif %}
                     {% if current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
                     <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">

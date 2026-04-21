@@ -404,5 +404,72 @@ class CloudStorageManager:
             return user
         return None
 
+    def _load_admin_emails(self) -> List[str]:
+        """Load admin-eligible emails from storage, normalized to lowercase."""
+        data = self._load_json('config/admin_emails.json')
+        if not data:
+            return []
+        emails = data.get('emails', [])
+        if not isinstance(emails, list):
+            return []
+        normalized = []
+        for email in emails:
+            if isinstance(email, str):
+                cleaned = email.strip().lower()
+                if cleaned:
+                    normalized.append(cleaned)
+        return sorted(list(set(normalized)))
+
+    def _save_admin_emails(self, emails: List[str]) -> bool:
+        try:
+            normalized = sorted(list(set(
+                e.strip().lower() for e in emails if isinstance(e, str) and e.strip()
+            )))
+            self._save_json(
+                'config/admin_emails.json',
+                {
+                    'emails': normalized,
+                    'updated_at': datetime.utcnow().isoformat()
+                }
+            )
+            return True
+        except Exception as e:
+            print(f"Error saving admin emails: {e}")
+            return False
+
+    def get_admin_emails(self) -> List[str]:
+        return self._load_admin_emails()
+
+    def add_admin_email(self, email: str) -> bool:
+        cleaned = (email or '').strip().lower()
+        if not cleaned:
+            return False
+        emails = self._load_admin_emails()
+        if cleaned in emails:
+            return True
+        emails.append(cleaned)
+        return self._save_admin_emails(emails)
+
+    def is_email_admin_eligible(self, email: str) -> bool:
+        cleaned = (email or '').strip().lower()
+        if not cleaned:
+            return False
+        return cleaned in self._load_admin_emails()
+
+    def set_user_admin_status(self, email: str, is_admin: bool) -> bool:
+        """Update existing user record by email if found."""
+        cleaned = (email or '').strip().lower()
+        if not cleaned:
+            return False
+        users = self._list_files('users/')
+        for user_file in users:
+            user_data = self._load_json(user_file)
+            if user_data and (user_data.get('email', '').strip().lower() == cleaned):
+                user_data['is_admin'] = bool(is_admin)
+                user_data['updated_at'] = datetime.utcnow().isoformat()
+                self._save_json(user_file, user_data)
+                return True
+        return False
+
 
 cloud_storage = CloudStorageManager() 

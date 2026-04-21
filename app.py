@@ -62,6 +62,23 @@ def user_can_delete_cis_news_item(item):
     return author and author == (current_user.email or "").strip().lower()
 
 
+ADMIN_EMAILS = [
+    'chrisho2009@gmail.com',
+    'amazingadityab@gmail.com',
+    'vaishnavanand90@gmail.com',
+    'asherburdeny@gmail.com'
+]
+
+
+def is_admin_email(email):
+    cleaned = (email or '').strip().lower()
+    if not cleaned:
+        return False
+    if cleaned in ADMIN_EMAILS:
+        return True
+    return cloud_storage.is_email_admin_eligible(cleaned)
+
+
 
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -237,6 +254,11 @@ def login():
         
         user_data = cloud_storage.authenticate_user(email, password)
         if user_data:
+            # Keep legacy/admin-eligible emails in sync with stored user flag.
+            email_normalized = (email or '').strip().lower()
+            if not user_data.get('is_admin', False) and is_admin_email(email_normalized):
+                cloud_storage.set_user_admin_status(email_normalized, True)
+                user_data['is_admin'] = True
             user = CloudUser(user_data)
             login_user(user)
             flash('Login successful!', 'success')
@@ -274,6 +296,31 @@ def register():
             flash(str(e), 'error')
     
     return render_template('register.html')
+
+
+@app.route('/admin/manage-admins', methods=['GET', 'POST'])
+@login_required
+def manage_admins():
+    if not current_user.is_admin:
+        flash('You do not have permission to manage admins.', 'error')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        email = (request.form.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            flash('Please enter a valid email address.', 'error')
+            return redirect(url_for('manage_admins'))
+
+        if cloud_storage.add_admin_email(email):
+            # If user already exists, promote immediately.
+            cloud_storage.set_user_admin_status(email, True)
+            flash(f'{email} can now register/login as an admin.', 'success')
+        else:
+            flash('Could not save admin email. Please try again.', 'error')
+        return redirect(url_for('manage_admins'))
+
+    configured_admins = sorted(list(set(ADMIN_EMAILS + cloud_storage.get_admin_emails())))
+    return render_template('admin/manage_admins.html', admin_emails=configured_admins)
 
 @app.route('/logout')
 @login_required
@@ -1596,16 +1643,6 @@ class GalleryItem:
         print(f"GalleryItem init - additional_images: {self.additional_images}, type: {type(self.additional_images)}, length: {len(additional_images_list) if isinstance(self.additional_images, (list, tuple)) else 'NOT_LIST'}, has_images: {self.has_images}")
         self.is_mixed_media = self.has_videos and self.has_images
         self.has_multiple_creators = len(self.creators) > 1
-
-ADMIN_EMAILS = [
-    'chrisho2009@gmail.com',
-    'amazingadityab@gmail.com',
-    'vaishnavanand90@gmail.com',
-    'asherburdeny@gmail.com'
-]
-
-def is_admin_email(email):
-    return email in ADMIN_EMAILS
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000) 

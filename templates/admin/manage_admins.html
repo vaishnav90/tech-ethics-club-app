@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Admins - Tech & Ethics Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.3') }}">
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="/" class="nav-button"><span class="nav-text">HOME</span></a>
+                <a href="/gallery" class="nav-button"><span class="nav-text">PROJECTS</span></a>
+                <a href="{{ url_for('manage_admins') }}" class="nav-button"><span class="nav-text">ADMINS</span></a>
+                <a href="/contact" class="nav-button"><span class="nav-text">CONTACT US</span></a>
+                <a href="{{ url_for('logout') }}" class="nav-button auth-small"><span class="nav-text">LOGOUT</span></a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">MANAGE ADMINS</h1>
+                <p class="page-subtitle">Add an email so that person becomes admin at signup/login.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-container">
+                <form method="POST" class="admin-form">
+                    <div class="form-group">
+                        <label for="email" class="form-label">ADMIN EMAIL *</label>
+                        <input type="email" id="email" name="email" class="form-input" required placeholder="newadmin@example.com">
+                        <div class="form-help">If this user already exists, they are promoted immediately.</div>
+                    </div>
+                    <button type="submit" class="submit-btn">ADD ADMIN EMAIL</button>
+                </form>
+            </div>
+
+            <div class="form-container" style="margin-top: 24px;">
+                <h2 class="page-subtitle" style="margin-bottom: 12px;">Current Admin Emails</h2>
+                {% if admin_emails %}
+                    <ul style="margin: 0; padding-left: 18px;">
+                        {% for email in admin_emails %}
+                            <li class="blueprint-text">{{ email }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="blueprint-text">No admin emails configured.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>
