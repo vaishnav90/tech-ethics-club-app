@@ -82,20 +82,20 @@
                         {% endif %}
                     {% endwith %}
                     
-                    <form method="POST" class="auth-form">
+                    <form method="POST" class="auth-form" autocomplete="on">
                         <div class="form-group">
                             <label for="email" class="form-label">EMAIL ADDRESS:</label>
-                            <input type="email" id="email" name="email" class="form-input" required>
+                            <input type="email" id="email" name="email" class="form-input" required autocomplete="email" inputmode="email" spellcheck="false">
                         </div>
                         
                         <div class="form-group">
                             <label for="password" class="form-label">PASSWORD:</label>
-                            <input type="password" id="password" name="password" class="form-input" required>
+                            <input type="password" id="password" name="password" class="form-input" required autocomplete="new-password">
                         </div>
                         
                         <div class="form-group">
                             <label for="confirm_password" class="form-label">CONFIRM PASSWORD:</label>
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-input" required>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-input" required autocomplete="new-password">
                         </div>
                         
                         <div class="form-actions">

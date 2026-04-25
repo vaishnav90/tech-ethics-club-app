@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CIS News - Tech & Ethics Club</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.5') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -109,6 +109,25 @@
                 </div>
             </section>
 
+            <div class="search-section cis-news-search-wrap">
+                <div class="search-container">
+                    <form class="search-form" id="cisNewsSearchForm" action="{{ url_for('cis_news') }}" method="get" role="search">
+                        <div class="search-input-group">
+                            <input type="search" name="search" id="cisNewsSearchInput"
+                                   value="{{ cis_search_query }}"
+                                   class="search-input"
+                                   placeholder="Type to filter headlines, content, or author…"
+                                   autocomplete="off"
+                                   aria-controls="cisNewsList">
+                        </div>
+                        <div class="search-filters">
+                            <button type="button" class="clear-filters-btn" id="cisNewsClearSearch">CLEAR</button>
+                        </div>
+                    </form>
+                    <p id="cisNewsSearchMeta" class="cis-news-search-meta blueprint-text compact" style="display:none;" aria-live="polite"></p>
+                </div>
+            </div>
+
             <section class="section blueprint-section animate-in cis-news-feed-section">
                 <div class="section-header compact">
                     <h2 class="section-title">FEED</h2>
@@ -120,9 +139,10 @@
                     No updates yet. Check back soon{% if current_user.is_authenticated %}—or post an update below{% else %}—or log in to post below{% endif %}.
                 </div>
                 {% else %}
-                <ul class="cis-news-list">
+                <ul class="cis-news-list" id="cisNewsList">
                     {% for item in cis_news_items %}
-                    <li class="cis-news-list-item">
+                    {% set _hay = ((item.title or '') ~ ' ' ~ (item.body or '') ~ ' ' ~ (item.created_by_email or ''))|replace('\n', ' ')|replace('\r', ' ')|lower %}
+                    <li class="cis-news-list-item" data-cis-haystack="{{ _hay|e }}">
                     <article class="cis-news-card">
                         {% if item.image_url %}
                         <div class="cis-news-card-media">
@@ -148,6 +168,9 @@
                     </li>
                     {% endfor %}
                 </ul>
+                <div id="cisNewsNoMatches" class="cis-news-empty blueprint-text" style="display:none;" role="status">
+                    No updates match what you typed. Try different words or press CLEAR.
+                </div>
                 {% endif %}
             </section>
 
@@ -193,5 +216,103 @@
 
         </main>
     </div>
+    {% if cis_news_items %}
+    <script>
+    (function () {
+        var input = document.getElementById('cisNewsSearchInput');
+        var form = document.getElementById('cisNewsSearchForm');
+        var items = document.querySelectorAll('.cis-news-list-item');
+        var meta = document.getElementById('cisNewsSearchMeta');
+        var noMatches = document.getElementById('cisNewsNoMatches');
+        var listEl = document.getElementById('cisNewsList');
+        var total = items.length;
+        var debounceTimer;
+
+        function searchTerms(q) {
+            return q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        }
+
+        function rowMatches(haystack, terms) {
+            if (!terms.length) return true;
+            var h = haystack || '';
+            for (var i = 0; i < terms.length; i++) {
+                if (h.indexOf(terms[i]) === -1) return false;
+            }
+            return true;
+        }
+
+        function syncUrl(qTrimmed) {
+            try {
+                var u = new URL(window.location.href);
+                if (qTrimmed) u.searchParams.set('search', qTrimmed);
+                else u.searchParams.delete('search');
+                var qs = u.searchParams.toString();
+                window.history.replaceState({}, '', u.pathname + (qs ? '?' + qs : ''));
+            } catch (err) { /* ignore */ }
+        }
+
+        function applyFilter() {
+            var q = input ? input.value : '';
+            var qTrim = q.trim();
+            var terms = searchTerms(q);
+            var visible = 0;
+            for (var j = 0; j < items.length; j++) {
+                var li = items[j];
+                var hay = li.getAttribute('data-cis-haystack') || '';
+                var ok = rowMatches(hay, terms);
+                li.classList.toggle('cis-news-filter-hidden', !ok);
+                if (ok) visible++;
+            }
+            if (meta) {
+                if (!terms.length) {
+                    meta.style.display = 'none';
+                    meta.textContent = '';
+                } else {
+                    meta.style.display = 'block';
+                    meta.textContent = visible === 0
+                        ? 'No results for "' + qTrim + '".'
+                        : visible + ' result' + (visible === 1 ? '' : 's') + ' for "' + qTrim + '" (' + total + ' total).';
+                }
+            }
+            if (noMatches && listEl) {
+                noMatches.style.display = (terms.length && visible === 0) ? 'block' : 'none';
+            }
+        }
+
+        function debouncedApply() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                applyFilter();
+                syncUrl((input && input.value) ? input.value.trim() : '');
+            }, 160);
+        }
+
+        if (input) {
+            input.addEventListener('input', debouncedApply);
+            input.addEventListener('search', debouncedApply);
+        }
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                clearTimeout(debounceTimer);
+                applyFilter();
+                syncUrl((input && input.value) ? input.value.trim() : '');
+            });
+        }
+        var clearBtn = document.getElementById('cisNewsClearSearch');
+        if (clearBtn && input) {
+            clearBtn.addEventListener('click', function () {
+                input.value = '';
+                clearTimeout(debounceTimer);
+                syncUrl('');
+                applyFilter();
+                input.focus();
+            });
+        }
+        applyFilter();
+        syncUrl((input && input.value) ? input.value.trim() : '');
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

@@ -276,7 +276,12 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
+        confirm_password = request.form.get('confirm_password')
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('register.html')
+
         try:
             is_admin = is_admin_email(email)
             
@@ -1411,10 +1416,15 @@ def cis_news():
             flash("Could not save news. Please try again.", "error")
         return redirect(url_for("cis_news"))
 
-    items = cis_news_storage.get_all_items()
+    all_items = cis_news_storage.get_all_items()
+    # Initial search box value (e.g. shared link); filtering runs in the browser as the user types.
+    search_query = (request.args.get("search") or "").strip()
+
     return render_template(
         "cis_news.html",
-        cis_news_items=items,
+        cis_news_items=all_items,
+        cis_search_query=search_query,
+        cis_news_total=len(all_items),
         can_manage_cis_news=user_can_manage_cis_news(),
     )
 
