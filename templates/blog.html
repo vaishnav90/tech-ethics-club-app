@@ -50,9 +50,7 @@
                 <a href="/gallery" class="nav-button">
                     <span class="nav-text">PROJECTS</span>
                 </a>
-                <a href="/blog" class="nav-button">
-                    <span class="nav-text">BLOG</span>
-                </a>
+                <!-- BLOG nav link hidden from public until blog is ready to launch -->
                 <a href="{{ url_for('cis_news') }}" class="nav-button">
                     <span class="nav-text">CIS NEWS</span>
                 </a>
@@ -393,20 +391,21 @@
                     const searchTerms = searchQuery.toLowerCase().split(' ');
                     
                     if (exactMatch) {
-                        // Exact match: search query must be found in any field
-                        if (!(searchQuery.toLowerCase() in postTitle || 
-                              searchQuery.toLowerCase() in postContent || 
-                              searchQuery.toLowerCase() in postAuthor || 
-                              postTags.some(tag => searchQuery.toLowerCase() in tag))) {
+                        // Exact match: search query must appear as a substring in any field
+                        const q = searchQuery.toLowerCase();
+                        if (!(postTitle.includes(q) ||
+                              postContent.includes(q) ||
+                              postAuthor.includes(q) ||
+                              postTags.some(tag => tag.includes(q)))) {
                             matches = false;
                         }
                     } else {
-                        // Word-based search: at least one word must be found in any field
-                        if (!searchTerms.some(word => 
-                            word in postTitle || 
-                            (searchContent && word in postContent) || 
-                            word in postAuthor || 
-                            postTags.some(tag => word in tag))) {
+                        // Word-based search: at least one word must appear as a substring in any field
+                        if (!searchTerms.some(word =>
+                            postTitle.includes(word) ||
+                            (searchContent && postContent.includes(word)) ||
+                            postAuthor.includes(word) ||
+                            postTags.some(tag => tag.includes(word)))) {
                             matches = false;
                         }
                     }

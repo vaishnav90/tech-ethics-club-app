@@ -19,10 +19,9 @@
             window.PAGE_INITIALIZED = true;
         }
         
-        // Mobile detection
+        // Mobile detection via viewport width (more reliable than UA sniffing)
         function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                   window.innerWidth <= 768;
+            return window.matchMedia('(max-width: 768px)').matches;
         }
         
         // Disable heavy features on mobile
@@ -71,7 +70,7 @@
         
         <nav class="navigation">
             <div class="nav-container">
-                <a href="/" class="nav-button">
+                <a href="/" class="nav-button nav-button-active">
                     <span class="nav-text">HOME</span>
                 </a>
                 <a href="/team" class="nav-button">
@@ -1661,13 +1660,14 @@ Program completed successfully!`;
         // Error handling to prevent infinite reloads
         window.addEventListener('error', function(e) {
             console.error('JavaScript error:', e.error);
-            // Prevent page reload on critical errors
-            if (e.error && e.error.message && e.error.message.includes('memory')) {
-                e.preventDefault();
-                console.log('Memory error detected, disabling heavy features');
-                window.MOBILE_MODE = true;
-            }
         });
+
+        // Disable heavy WebGL features when the browser loses the context (e.g. GPU memory pressure)
+        document.addEventListener('webglcontextlost', function(e) {
+            e.preventDefault();
+            console.log('WebGL context lost, disabling heavy features');
+            window.MOBILE_MODE = true;
+        }, true);
 
         // Start everything when page loads
         document.addEventListener('DOMContentLoaded', function() {

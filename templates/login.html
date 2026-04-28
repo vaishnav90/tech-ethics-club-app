@@ -44,8 +44,11 @@
                 <a href="/" class="nav-button">
                     <span class="nav-text">HOME</span>
                 </a>
+                <a href="/team" class="nav-button">
+                    <span class="nav-text">TEAM</span>
+                </a>
                 <a href="/gallery" class="nav-button">
-                    <span class="nav-text">GALLERY</span>
+                    <span class="nav-text">PROJECTS</span>
                 </a>
                 <a href="{{ url_for('cis_news') }}" class="nav-button">
                     <span class="nav-text">CIS NEWS</span>
@@ -53,9 +56,28 @@
                 <a href="/contact" class="nav-button">
                     <span class="nav-text">CONTACT US</span>
                 </a>
-                <a href="/team" class="nav-button">
-                    <span class="nav-text">OUR TEAM</span>
-                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('add_gallery_item') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ITEM</span>
+                        </a>
+                        <a href="{{ url_for('manage_admins') }}" class="nav-button auth-small">
+                            <span class="nav-text">ADD ADMIN</span>
+                        </a>
+                    {% endif %}
+                    {% if current_user.email in ['vaishnavanand90@gmail.com', 'asherburdeny@gmail.com', 'amazingadityab@gmail.com', 'chrisho2009@gmail.com'] %}
+                    <a href="{{ url_for('add_blog_post') }}" class="nav-button auth-small">
+                        <span class="nav-text">ADD POST</span>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="nav-button auth-small">
+                        <span class="nav-text">LOGOUT</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-button auth-small nav-button-active">
+                        <span class="nav-text">LOGIN</span>
+                    </a>
+                {% endif %}
             </div>
         </nav>
 

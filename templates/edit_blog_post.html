@@ -47,9 +47,7 @@
                 <a href="/gallery" class="nav-button">
                     <span class="nav-text">GALLERY</span>
                 </a>
-                <a href="/blog" class="nav-button">
-                    <span class="nav-text">BLOG</span>
-                </a>
+                <!-- BLOG nav link hidden from public until blog is ready to launch -->
                 <a href="{{ url_for('cis_news') }}" class="nav-button">
                     <span class="nav-text">CIS NEWS</span>
                 </a>
@@ -277,6 +275,7 @@
         }
         
         function loadExistingWorksCited() {
+            // works_cited is not yet persisted by the backend; this will always be []
             const worksCited = {{ post.works_cited|tojson|safe if post.works_cited else '[]' }};
             
             worksCited.forEach((source, index) => {

@@ -319,14 +319,17 @@
             }
             
             // Additional Images management
-            let additionalImageIndex = 1;
-            
+            // Count live entries so labels stay correct after removals
+            function additionalImageCount() {
+                return document.getElementById('additional-images-container').querySelectorAll('.additional-image-entry').length;
+            }
+
             function addAdditionalImageEntry() {
                 const container = document.getElementById('additional-images-container');
+                const num = additionalImageCount() + 1;
                 const imageEntry = document.createElement('div');
                 imageEntry.className = 'additional-image-entry';
-                imageEntry.setAttribute('data-image-index', additionalImageIndex);
-                
+
                 imageEntry.innerHTML = `
                     <div class="form-group">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
@@ -335,7 +338,7 @@
                                 <span class="button-text">- REMOVE</span>
                             </button>
                         </div>
-                        <div class="file-info">Additional image ${additionalImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
+                        <div class="file-info">Additional image ${num} (Max 15MB per file, will be automatically optimized)</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">IMAGE LINK (OPTIONAL):</label>
@@ -343,39 +346,41 @@
                         <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
                     </div>
                 `;
-                
+
                 container.appendChild(imageEntry);
-                additionalImageIndex++;
-                
-                // Add remove functionality
-                const removeBtn = imageEntry.querySelector('.remove-image-btn');
-                removeBtn.addEventListener('click', function() {
+
+                // Remove entry and re-number remaining labels
+                imageEntry.querySelector('.remove-image-btn').addEventListener('click', function() {
                     imageEntry.remove();
+                    container.querySelectorAll('.additional-image-entry').forEach((entry, i) => {
+                        const info = entry.querySelector('.file-info');
+                        if (info) info.textContent = `Additional image ${i + 1} (Max 15MB per file, will be automatically optimized)`;
+                    });
                 });
-                
-                // Add file size validation
-                const fileInput = imageEntry.querySelector('input[type="file"]');
-                fileInput.addEventListener('change', function() {
+
+                imageEntry.querySelector('input[type="file"]').addEventListener('change', function() {
                     validateFileSize(this);
                 });
             }
             
             // Slideshow Images management
-            let slideshowImageIndex = 1;
-            
+            function slideshowImageCount() {
+                return document.getElementById('slideshow-images-container').querySelectorAll('.slideshow-image-entry').length;
+            }
+
             function addSlideshowImageEntry() {
                 const container = document.getElementById('slideshow-images-container');
+                const num = slideshowImageCount() + 1;
                 const imageEntry = document.createElement('div');
                 imageEntry.className = 'slideshow-image-entry';
-                imageEntry.setAttribute('data-slideshow-index', slideshowImageIndex);
-                
+
                 imageEntry.innerHTML = `
                     <div class="form-group">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                             <div style="flex: 1;">
-                                <label class="form-label">SLIDESHOW IMAGE ${slideshowImageIndex + 1}:</label>
+                                <label class="form-label">SLIDESHOW IMAGE ${num}:</label>
                                 <input type="file" name="slideshow_images[]" class="form-file" accept="image/*">
-                                <div class="file-info">Slideshow image ${slideshowImageIndex + 1} (Max 15MB per file, will be automatically optimized)</div>
+                                <div class="file-info">Slideshow image ${num} (Max 15MB per file, will be automatically optimized)</div>
                             </div>
                             <button type="button" class="remove-slideshow-image-btn admin-button secondary" style="padding: 8px 12px; font-size: 0.8rem; align-self: flex-end; margin-bottom: 10px;">
                                 <span class="button-text">- REMOVE</span>
@@ -388,84 +393,89 @@
                         <div class="file-info">Link to view full image. Image will be clickable if link is provided.</div>
                     </div>
                 `;
-                
+
                 container.appendChild(imageEntry);
-                slideshowImageIndex++;
-                
-                // Add remove functionality
-                const removeBtn = imageEntry.querySelector('.remove-slideshow-image-btn');
-                removeBtn.addEventListener('click', function() {
+
+                imageEntry.querySelector('.remove-slideshow-image-btn').addEventListener('click', function() {
                     imageEntry.remove();
+                    container.querySelectorAll('.slideshow-image-entry').forEach((entry, i) => {
+                        const label = entry.querySelector('.form-label');
+                        if (label) label.textContent = `SLIDESHOW IMAGE ${i + 1}:`;
+                        const info = entry.querySelector('.file-info');
+                        if (info) info.textContent = `Slideshow image ${i + 1} (Max 15MB per file, will be automatically optimized)`;
+                    });
                 });
-                
-                // Add file size validation
-                const fileInput = imageEntry.querySelector('input[type="file"]');
-                fileInput.addEventListener('change', function() {
+
+                imageEntry.querySelector('input[type="file"]').addEventListener('change', function() {
                     validateFileSize(this);
                 });
             }
             
             // Creator management
-            let creatorIndex = 1;
-            
+            function creatorCount() {
+                return document.getElementById('creators-container').querySelectorAll('.creator-entry').length;
+            }
+
             function addCreatorEntry() {
                 const container = document.getElementById('creators-container');
+                const num = creatorCount() + 1;
                 const creatorEntry = document.createElement('div');
                 creatorEntry.className = 'creator-entry';
-                creatorEntry.setAttribute('data-creator-index', creatorIndex);
-                
+
                 creatorEntry.innerHTML = `
                     <div class="form-group">
-                        <label class="form-label">CREATOR ${creatorIndex + 1} NAME:</label>
+                        <label class="form-label">CREATOR ${num} NAME:</label>
                         <input type="text" name="creator_names[]" class="form-input" placeholder="Creator's name" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">EMAIL (OPTIONAL):</label>
                         <input type="email" name="creator_emails[]" class="form-input" placeholder="creator@example.com">
                         <div class="file-info">For people who want to connect or ask questions</div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">LINKEDIN (OPTIONAL):</label>
                         <input type="url" name="creator_linkedins[]" class="form-input" placeholder="https://linkedin.com/in/creator">
                         <div class="file-info">LinkedIn profile URL for professional connections</div>
                     </div>
-                    
-                    
+
                     <button type="button" class="remove-creator-btn admin-button secondary" style="margin-top: 10px;">
                         <span class="button-text">- REMOVE THIS CREATOR</span>
                     </button>
                 `;
-                
+
                 container.appendChild(creatorEntry);
-                creatorIndex++;
-                
-                // Add remove functionality
-                const removeBtn = creatorEntry.querySelector('.remove-creator-btn');
-                removeBtn.addEventListener('click', function() {
+
+                creatorEntry.querySelector('.remove-creator-btn').addEventListener('click', function() {
                     creatorEntry.remove();
+                    container.querySelectorAll('.creator-entry').forEach((entry, i) => {
+                        const label = entry.querySelector('.form-label');
+                        if (label) label.textContent = `CREATOR ${i + 1} NAME:`;
+                    });
                 });
             }
             
             // Video management
-            let videoIndex = 1;
-            
+            function videoCount() {
+                return document.getElementById('videos-container').querySelectorAll('.video-entry').length;
+            }
+
             function addVideoEntry() {
                 const container = document.getElementById('videos-container');
+                const num = videoCount() + 1;
                 const videoEntry = document.createElement('div');
                 videoEntry.className = 'video-entry';
-                videoEntry.setAttribute('data-video-index', videoIndex);
-                
+
                 videoEntry.innerHTML = `
                     <div class="form-group">
-                        <label class="form-label">VIDEO ${videoIndex + 1}:</label>
+                        <label class="form-label">VIDEO ${num}:</label>
                         <input type="url" name="video_urls[]" class="form-input" placeholder="https://youtube.com/watch?v=... or https://drive.google.com/... or https://example.com/video.mp4">
                         <div class="file-info">Video URL (YouTube, Vimeo, Google Drive, or direct MP4/WebM/OGG file)</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">VIDEO TITLE (OPTIONAL):</label>
-                        <input type="text" name="video_titles[]" class="form-input" placeholder="e.g., Project Demo, Tutorial Part ${videoIndex + 1}">
+                        <input type="text" name="video_titles[]" class="form-input" placeholder="e.g., Project Demo, Tutorial Part ${num}">
                         <div class="file-info">Give your video a descriptive title</div>
                     </div>
                     <div class="form-group">
@@ -477,32 +487,36 @@
                         <span class="button-text">- REMOVE THIS VIDEO</span>
                     </button>
                 `;
-                
+
                 container.appendChild(videoEntry);
-                videoIndex++;
-                
-                // Add remove functionality
-                const removeBtn = videoEntry.querySelector('.remove-video-btn');
-                removeBtn.addEventListener('click', function() {
+
+                videoEntry.querySelector('.remove-video-btn').addEventListener('click', function() {
                     videoEntry.remove();
+                    container.querySelectorAll('.video-entry').forEach((entry, i) => {
+                        const label = entry.querySelector('.form-label');
+                        if (label) label.textContent = `VIDEO ${i + 1}:`;
+                    });
                 });
             }
             
             // Project links functionality
-            let projectLinkIndex = 1;
+            function projectLinkCount() {
+                return document.getElementById('project-links-container').querySelectorAll('.project-link-entry').length;
+            }
+
             function addProjectLinkEntry() {
                 const container = document.getElementById('project-links-container');
+                const num = projectLinkCount() + 1;
                 const projectLinkEntry = document.createElement('div');
                 projectLinkEntry.className = 'project-link-entry';
-                projectLinkEntry.setAttribute('data-link-index', projectLinkIndex);
                 projectLinkEntry.innerHTML = `
                     <div class="form-group">
-                        <label class="form-label">LINK ${projectLinkIndex + 1} TITLE:</label>
+                        <label class="form-label link-title-label">LINK ${num} TITLE:</label>
                         <input type="text" name="project_link_titles[]" class="form-input" placeholder="e.g., View Project, GitHub Repository, Live Demo">
                         <div class="file-info">Give your link a descriptive title</div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">LINK ${projectLinkIndex + 1} URL:</label>
+                        <label class="form-label link-url-label">LINK ${num} URL:</label>
                         <div style="display: flex; gap: 10px; align-items: flex-end;">
                             <input type="url" name="project_link_urls[]" class="form-input" placeholder="https://example.com/project" style="flex: 1;">
                             <button type="button" class="remove-project-link-btn admin-button secondary" style="padding: 10px 15px;">
@@ -512,18 +526,22 @@
                         <div class="file-info">Add a link to your project, portfolio, or related resource</div>
                     </div>
                 `;
-                
+
                 container.appendChild(projectLinkEntry);
-                projectLinkIndex++;
-                
+
                 // Show remove button on first entry if there are multiple entries
                 updateProjectLinkRemoveButtons();
-                
-                // Add remove functionality
-                const removeBtn = projectLinkEntry.querySelector('.remove-project-link-btn');
-                removeBtn.addEventListener('click', function() {
+
+                projectLinkEntry.querySelector('.remove-project-link-btn').addEventListener('click', function() {
                     projectLinkEntry.remove();
                     updateProjectLinkRemoveButtons();
+                    // Re-number link labels after removal
+                    container.querySelectorAll('.project-link-entry').forEach((entry, i) => {
+                        const titleLabel = entry.querySelector('.link-title-label');
+                        if (titleLabel) titleLabel.textContent = `LINK ${i + 1} TITLE:`;
+                        const urlLabel = entry.querySelector('.link-url-label');
+                        if (urlLabel) urlLabel.textContent = `LINK ${i + 1} URL:`;
+                    });
                 });
             }
             

@@ -18,6 +18,7 @@ tech-ethics-club-sa-key.json (see CloudStorageManager).
 from flask import Flask, render_template, request, flash, redirect, url_for, send_from_directory, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import os
+import logging
 from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
@@ -82,7 +83,7 @@ def is_admin_email(email):
 
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 15 * 1024 * 1024  # 15MB, matches client-side validation
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_PATH'] = None
 
@@ -131,16 +132,28 @@ def index():
 def gallery():
     """List all gallery items; optional ?course=<id> filters to one course."""
     course_filter = request.args.get('course', '').strip()
-    
-    gallery_items_data = cloud_storage.get_all_gallery_items()
-    
+
+    if not cloud_storage._storage_available:
+        flash('Storage is currently unavailable. Gallery items cannot be loaded.', 'error')
+
+    try:
+        gallery_items_data = cloud_storage.get_all_gallery_items()
+    except Exception as e:
+        logging.error(f"Failed to load gallery items: {e}")
+        flash('Could not load gallery items. Please try again later.', 'error')
+        gallery_items_data = []
+
     if course_filter:
         gallery_items_data = [item for item in gallery_items_data if item.get('course_id') == course_filter]
-    
+
     gallery_items = [GalleryItem(item) for item in gallery_items_data]
-    
-    courses = cloud_storage.get_all_courses()
-    
+
+    try:
+        courses = cloud_storage.get_all_courses()
+    except Exception as e:
+        logging.error(f"Failed to load courses: {e}")
+        courses = []
+
     return render_template('gallery.html', gallery_items=gallery_items, courses=courses, selected_course=course_filter)
 
 @app.route('/gallery/<item_id>')

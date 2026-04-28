@@ -23,6 +23,7 @@ class CloudStorageManager:
         self.client = None
         self.bucket = None
         self.auth_error = None
+        self._storage_available = False
         
         try:
             if os.environ.get('GAE_ENV'):
@@ -36,15 +37,19 @@ class CloudStorageManager:
                 self.client = storage.Client()
             
             self.bucket = self.client.bucket(self.bucket_name)
-            
+
             try:
                 list(self.bucket.list_blobs(max_results=1))
                 print(f"Successfully connected to bucket: {self.bucket_name}")
+                self._storage_available = True
             except Exception as bucket_error:
+                # Credentials exist but lack bucket permissions (common in local dev)
                 print(f"Warning: Could not access bucket {self.bucket_name}: {bucket_error}")
-                
+                self._storage_available = False
+
         except Exception as e:
             self.auth_error = str(e)
+            self._storage_available = False
             print(f"Error initializing cloud storage: {e}")
             print("Cloud storage will be disabled. Make sure you have:")
             print("1. Google Cloud SDK installed and authenticated")
@@ -55,6 +60,9 @@ class CloudStorageManager:
         return self.bucket.blob(path)
     
     def _save_json(self, path: str, data: Dict):
+        if not self._storage_available:
+            print(f"Storage unavailable; skipping write to {path}")
+            return
         blob = self._get_blob(path)
         blob.upload_from_string(
             json.dumps(data, default=str),
@@ -74,8 +82,14 @@ class CloudStorageManager:
             return None
     
     def _list_files(self, prefix: str) -> List[str]:
-        blobs = self.client.list_blobs(self.bucket_name, prefix=prefix)
-        return [blob.name for blob in blobs]
+        if not self._storage_available:
+            return []
+        try:
+            blobs = self.client.list_blobs(self.bucket_name, prefix=prefix)
+            return [blob.name for blob in blobs]
+        except Exception as e:
+            print(f"Error listing files at {prefix}: {e}")
+            return []
     
     def _delete_file(self, path: str):
         try:
