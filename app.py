@@ -41,7 +41,7 @@ CIS_NEWS_EDITOR_EMAILS = frozenset(
     {
         "vaishnavanand90@gmail.com",
         "asherburdeny@gmail.com",
-        "amazingadityab@gmail.com",
+       
         "chrisho2009@gmail.com",
     }
 )
@@ -123,6 +123,11 @@ def serve_static(filename):
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
     return response
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve a persistent tab icon for all pages."""
+    return send_from_directory('static/imgs', 'headshot_athenian_optimized.jpg')
 
 @app.route('/')
 def index():
