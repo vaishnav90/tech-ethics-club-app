@@ -127,7 +127,7 @@ def serve_static(filename):
 @app.route('/favicon.ico')
 def favicon():
     """Serve a persistent tab icon for all pages."""
-    return send_from_directory('static/imgs', 'headshot_athenian_optimized.jpg')
+    return send_from_directory('static/imgs', 'tech_and_ethics_logo.jpg')
 
 @app.route('/')
 def index():
