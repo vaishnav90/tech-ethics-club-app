@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Team - Tech & Ethics Club</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='5.7') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Task 71: Orbitron self-hosted — eliminates Google Fonts DNS lookup and tracking -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/Orbitron.woff2') }}" as="font" type="font/woff2" crossorigin>
 
 </head>
 <body>
@@ -98,7 +97,7 @@
                     </div>
                     <div class="team-member-content">
                         <div class="member-image">
-                            <img src="{{ url_for('static', filename='imgs/headshot_athenian_optimized.jpg') }}" alt="Vaishnav Anand" class="member-photo">
+                            <img src="{{ url_for('static', filename='imgs/headshot_athenian_optimized.jpg') }}" alt="Vaishnav Anand" class="member-photo" loading="lazy">
                         </div>
                         <div class="member-info">
                             <h3 class="member-role">President</h3>
@@ -126,7 +125,7 @@
                     </div>
                     <div class="team-member-content">
                         <div class="member-image">
-                            <img src="{{ url_for('static', filename='imgs/chrispic_optimized.jpg') }}" alt="Christopher Ho" class="member-photo">
+                            <img src="{{ url_for('static', filename='imgs/chrispic_optimized.jpg') }}" alt="Christopher Ho" class="member-photo" loading="lazy">
                         </div>
                         <div class="member-info">
                             <h3 class="member-role">Lead Design & Marketing</h3>
@@ -152,7 +151,7 @@
                     </div>
                     <div class="team-member-content">
                         <div class="member-image">
-                            <img src="{{ url_for('static', filename='imgs/asherpic.png') }}" alt="Asher Burdeny" class="member-photo">
+                            <img src="{{ url_for('static', filename='imgs/asherpic.png') }}" alt="Asher Burdeny" class="member-photo" loading="lazy">
                         </div>
                         <div class="member-info">
                             <h3 class="member-role">Lead, Partnerships & Event Coordinator</h3>

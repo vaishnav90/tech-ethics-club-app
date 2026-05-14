@@ -60,9 +60,8 @@
             }
         }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Task 71: Orbitron self-hosted — eliminates Google Fonts DNS lookup and tracking -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/Orbitron.woff2') }}" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
     {# Single project: item = GalleryItem. Desktop layout = CSS grid: col1 media, col2 title/desc/etc.; JS may move overflow media into a full-width 3-col row (see adjustMediaFlow). #}

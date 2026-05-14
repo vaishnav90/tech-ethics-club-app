@@ -1105,8 +1105,17 @@ def blog():
     else:
         blog_posts = all_posts
     
-    return render_template('blog.html', blog_posts=blog_posts, 
-                         all_authors=all_authors, all_tags=all_tags)
+    # Task 69: strip full content before serialising into the page JS payload.
+    # The initial HTML render (above) still uses full blog_posts for previews.
+    # Client-side search only needs metadata; content search falls back to the
+    # server-side form submission.
+    META_FIELDS = ('id', 'title', 'slug', 'author_name', 'author_city',
+                   'author_state', 'author_country', 'author_school', 'tags', 'created_at')
+    blog_posts_meta = [{k: p.get(k) for k in META_FIELDS} for p in blog_posts]
+
+    return render_template('blog.html', blog_posts=blog_posts,
+                           blog_posts_meta=blog_posts_meta,
+                           all_authors=all_authors, all_tags=all_tags)
 
 @app.route('/blog/<post_id>')
 def blog_post(post_id):

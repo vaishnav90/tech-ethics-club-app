@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog - Tech & Ethics Club</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='6.1') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Task 71: Orbitron self-hosted — eliminates Google Fonts DNS lookup and tracking -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/Orbitron.woff2') }}" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
     <div class="page">
@@ -327,110 +326,89 @@
             initDynamicSearch();
         });
         
-        // Dynamic search functionality
+        // Task 69: Only metadata is embedded in the page payload — full content
+        // is never serialised into JS. Content search still works via the server-
+        // side form (SEARCH button). The original server-rendered HTML is saved so
+        // clearing the search restores it exactly without rebuilding from JS.
         let searchTimeout;
-        let allBlogPosts = {{ blog_posts | tojson | safe }};
-        
+        const allBlogPosts = {{ blog_posts_meta | tojson | safe }};
+
+        // Snapshot taken before any dynamic manipulation
+        const originalPostsHTML = document.querySelector('.blog-posts-container').innerHTML;
+
         function initDynamicSearch() {
             const searchInput = document.getElementById('searchInput');
             const authorFilter = document.getElementById('authorFilter');
             const tagFilter = document.getElementById('tagFilter');
             const searchContent = document.getElementById('searchContent');
             const exactMatch = document.getElementById('exactMatch');
-            
-            // Add event listeners for real-time search
+
             searchInput.addEventListener('input', performDynamicSearch);
             authorFilter.addEventListener('change', performDynamicSearch);
             tagFilter.addEventListener('change', performDynamicSearch);
-            searchContent.addEventListener('change', performDynamicSearch);
             exactMatch.addEventListener('change', performDynamicSearch);
+
+            // Content search requires full text — submit the form for server-side results
+            searchContent.addEventListener('change', function() {
+                if (this.checked) { document.getElementById('searchForm').submit(); }
+                else { performDynamicSearch(); }
+            });
         }
-        
+
         function performDynamicSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 const searchQuery = document.getElementById('searchInput').value.trim();
                 const authorFilter = document.getElementById('authorFilter').value;
                 const tagFilter = document.getElementById('tagFilter').value;
-                const searchContent = document.getElementById('searchContent').checked;
                 const exactMatch = document.getElementById('exactMatch').checked;
-                
+
                 if (!searchQuery && !authorFilter && !tagFilter) {
-                    // No filters applied, show all posts
                     showAllPosts();
                     hideDynamicResults();
                     return;
                 }
-                
-                const filteredPosts = filterPosts(searchQuery, authorFilter, tagFilter, searchContent, exactMatch);
+
+                const filteredPosts = filterPosts(searchQuery, authorFilter, tagFilter, exactMatch);
                 displayDynamicResults(filteredPosts);
-            }, 300); // 300ms delay for better performance
+            }, 300);
         }
-        
-        function filterPosts(searchQuery, authorFilter, tagFilter, searchContent, exactMatch) {
+
+        // Content field is not included in allBlogPosts (task 69).
+        // Content search works via the SEARCH button (server-side).
+        function filterPosts(searchQuery, authorFilter, tagFilter, exactMatch) {
             return allBlogPosts.filter(post => {
-                let matches = true;
-                
-                // Filter by author
-                if (authorFilter && post.author_name !== authorFilter) {
-                    matches = false;
-                }
-                
-                // Filter by tag
-                if (tagFilter && (!post.tags || !post.tags.includes(tagFilter))) {
-                    matches = false;
-                }
-                
-                // Search in content
+                if (authorFilter && post.author_name !== authorFilter) return false;
+                if (tagFilter && (!post.tags || !post.tags.includes(tagFilter))) return false;
+
                 if (searchQuery) {
-                    const postTitle = post.title.toLowerCase();
-                    const postAuthor = post.author_name.toLowerCase();
-                    const postTags = post.tags ? post.tags.map(tag => tag.toLowerCase()) : [];
-                    const postContent = searchContent ? post.content.toLowerCase() : '';
-                    
-                    const searchTerms = searchQuery.toLowerCase().split(' ');
-                    
+                    const title  = post.title.toLowerCase();
+                    const author = post.author_name.toLowerCase();
+                    const tags   = (post.tags || []).map(t => t.toLowerCase());
+                    const q      = searchQuery.toLowerCase();
+
                     if (exactMatch) {
-                        // Exact match: search query must appear as a substring in any field
-                        const q = searchQuery.toLowerCase();
-                        if (!(postTitle.includes(q) ||
-                              postContent.includes(q) ||
-                              postAuthor.includes(q) ||
-                              postTags.some(tag => tag.includes(q)))) {
-                            matches = false;
-                        }
+                        if (!(title.includes(q) || author.includes(q) || tags.some(t => t.includes(q)))) return false;
                     } else {
-                        // Word-based search: at least one word must appear as a substring in any field
-                        if (!searchTerms.some(word =>
-                            postTitle.includes(word) ||
-                            (searchContent && postContent.includes(word)) ||
-                            postAuthor.includes(word) ||
-                            postTags.some(tag => tag.includes(word)))) {
-                            matches = false;
-                        }
+                        const words = q.split(' ');
+                        if (!words.some(w => title.includes(w) || author.includes(w) || tags.some(t => t.includes(w)))) return false;
                     }
                 }
-                
-                return matches;
+
+                return true;
             });
         }
-        
+
         function displayDynamicResults(filteredPosts) {
             const container = document.querySelector('.blog-posts-container');
             const dynamicResultsInfo = document.getElementById('dynamicResultsInfo');
             const dynamicResultsCount = document.getElementById('dynamicResultsCount');
-            
-            // Update results count
+
             dynamicResultsCount.textContent = `${filteredPosts.length} result(s) found`;
-            
-            // Show dynamic results info
             dynamicResultsInfo.style.display = 'flex';
-            
-            // Clear existing posts
             container.innerHTML = '';
-            
+
             if (filteredPosts.length === 0) {
-                // Show no results message
                 container.innerHTML = `
                     <section class="section blueprint-section no-posts-section">
                         <div class="section-header">
@@ -442,95 +420,55 @@
                                 No blog posts match your search criteria. Try adjusting your search terms or filters.
                             </p>
                         </div>
-                    </section>
-                `;
+                    </section>`;
             } else {
-                // Display filtered posts
-                filteredPosts.forEach(post => {
-                    const postElement = createPostElement(post);
-                    container.appendChild(postElement);
-                });
+                filteredPosts.forEach(post => container.appendChild(createPostElement(post)));
             }
-            
-            // Reinitialize animations for new content
-            setTimeout(() => {
-                initAnimations();
-            }, 100);
+
+            setTimeout(() => { initAnimations(); }, 100);
         }
-        
+
+        // Creates a minimal card for search results. Content preview is omitted
+        // since content is not included in the client-side metadata (task 69).
         function createPostElement(post) {
             const postSection = document.createElement('section');
             postSection.className = 'section blueprint-section blog-post-card';
-            
-            // Create post content (similar to the template)
             postSection.innerHTML = `
                 <div class="blog-post-header">
                     <h3 class="blog-post-title">
-                        <a href="/blog/post/${post.slug}" class="blog-post-link">
-                            ${post.title}
-                        </a>
+                        <a href="/blog/post/${post.slug}" class="blog-post-link">${post.title}</a>
                     </h3>
                     <div class="blog-post-meta">
-                        <span class="blog-post-date">${post.created_at.split('T')[0]}</span>
+                        <span class="blog-post-date">${(post.created_at || '').split('T')[0]}</span>
                         <span class="blog-post-author">By: ${post.author_name}</span>
-                        ${post.tags ? `
+                        ${post.tags && post.tags.length ? `
                         <div class="blog-post-tags">
                             ${post.tags.map(tag => `<span class="blog-tag">${tag}</span>`).join('')}
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                     </div>
-                </div>
-                <div class="blog-post-preview">
-                    <p class="blueprint-text">
-                        ${post.content.substring(0, 200)}...
-                    </p>
                 </div>
                 <div class="blog-post-footer">
-                    <a href="/blog/post/${post.slug}" class="read-more-btn">
-                        READ MORE
-                    </a>
-                    ${post.author_email === '{{ current_user.email if current_user.is_authenticated else "" }}' ? `
-                    <div class="admin-controls">
-                        <a href="/edit-blog-post/${post.id}" class="edit-btn">EDIT</a>
-                        <form method="POST" action="/delete-blog-post/${post.id}" style="display: inline;" class="delete-form">
-                            <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this blog post?')">DELETE</button>
-                        </form>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
+                    <a href="/blog/post/${post.slug}" class="read-more-btn">READ MORE</a>
+                </div>`;
             return postSection;
         }
-        
+
         function showAllPosts() {
-            const container = document.querySelector('.blog-posts-container');
-            container.innerHTML = '';
-            
-            // Recreate all posts from the original template
-            allBlogPosts.forEach(post => {
-                const postElement = createPostElement(post);
-                container.appendChild(postElement);
-            });
-            
-            // Reinitialize animations
-            setTimeout(() => {
-                initAnimations();
-            }, 100);
+            // Restore the original server-rendered HTML rather than rebuilding from JS
+            document.querySelector('.blog-posts-container').innerHTML = originalPostsHTML;
+            setTimeout(() => { initAnimations(); }, 100);
         }
-        
+
         function hideDynamicResults() {
-            const dynamicResultsInfo = document.getElementById('dynamicResultsInfo');
-            dynamicResultsInfo.style.display = 'none';
+            document.getElementById('dynamicResultsInfo').style.display = 'none';
         }
-        
+
         function clearDynamicSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('authorFilter').value = '';
             document.getElementById('tagFilter').value = '';
             document.getElementById('searchContent').checked = false;
             document.getElementById('exactMatch').checked = false;
-            
             showAllPosts();
             hideDynamicResults();
         }

@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery - Tech & Ethics Club</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.3') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Task 71: Orbitron self-hosted — eliminates Google Fonts DNS lookup and tracking -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/Orbitron.woff2') }}" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
     {# Projects listing: optional course filter from Flask; search/filters mostly client-side JS in this file. #}
@@ -302,14 +301,14 @@
                              data-has-images="{{ item.has_images|lower }}">
                             <div class="gallery-image">
                                 {% if item.image_url %}
-                                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                 {% elif item.additional_images and item.additional_images|length > 0 %}
-                                    <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
+                                    <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                 {% elif item.has_videos %}
                                     
                                     {% set first_video = item.videos[0] %}
                                     <div class="video-thumbnail-container">
-                                        <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                        <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                         <div class="play-button-overlay">
                                             <div class="play-button">
                                                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -470,14 +469,14 @@
                                      data-has-images="{{ item.has_images|lower }}">
                                     <div class="gallery-image">
                                         {% if item.image_url %}
-                                            <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                            <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                         {% elif item.additional_images and item.additional_images|length > 0 %}
-                                            <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
+                                            <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                         {% elif item.has_videos %}
                                             
                                             {% set first_video = item.videos[0] %}
                                             <div class="video-thumbnail-container">
-                                                <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                                <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                                 <div class="play-button-overlay">
                                                     <div class="play-button">
                                                         <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -626,14 +625,14 @@
                                  data-has-images="{{ item.has_images|lower }}">
                                 <div class="gallery-image">
                                     {% if item.image_url %}
-                                        <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                        <img src="{{ item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                     {% elif item.additional_images and item.additional_images|length > 0 %}
-                                        <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img">
+                                        <img src="{{ item.additional_images[0] }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                     {% elif item.has_videos %}
                                         
                                         {% set first_video = item.videos[0] %}
                                         <div class="video-thumbnail-container">
-                                            <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img">
+                                            <img src="{{ first_video.thumbnail_url or item.image_url }}" alt="{{ item.title }}" class="gallery-img" loading="lazy">
                                             <div class="play-button-overlay">
                                                 <div class="play-button">
                                                     <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

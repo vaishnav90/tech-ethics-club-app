@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tech & Ethics Club</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='3.1') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Task 71: Orbitron self-hosted — eliminates Google Fonts DNS lookup and tracking -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/Orbitron.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <!-- Task 66: SRI hashes added so a CDN compromise can't inject arbitrary JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+            integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"
+            integrity="sha384-fljlqkjWlmSFjkESkQvm77heIZpoWmXEOzlCA7kOpGUH+95Zk0yGfQieWM2q136E"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
+            integrity="sha384-wagZhIFgY4hD+7awjQjR4e2E294y6J2HSnd8eTNc15ZubTeQeVRZwhQJ+W6hnBsf"
+            crossorigin="anonymous"></script>
     <script>
         // Prevent multiple initializations
         if (window.PAGE_INITIALIZED) {
@@ -405,7 +411,6 @@
         function typeWriter(element, text, speed = 100) {
             let i = 0;
             element.innerHTML = '';
-            
             function type() {
                 if (i < text.length) {
                     element.innerHTML += text.charAt(i);
@@ -413,7 +418,6 @@
                     setTimeout(type, speed);
                 }
             }
-            
             type();
         }
 
@@ -421,706 +425,181 @@
         function scrollToSection(sectionId) {
             const section = document.getElementById(sectionId);
             if (section) {
-                section.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
-                // If section doesn't exist, show a placeholder message
                 alert(`${sectionId.charAt(0).toUpperCase() + sectionId.slice(1)} section coming soon!`);
             }
         }
 
-        // Three.js Robot Setup
-        let scene, camera, renderer, controls, mixer, clock;
-        let robotModel = null;
+        // ============================================================
+        // Task 65: Shared Three.js renderer — one WebGL context for all
+        // scenes. Each viewer gets a 2D display canvas that receives a
+        // blitted copy of the frame; OrbitControls bind to that canvas.
+        // preserveDrawingBuffer lets us drawImage() right after render.
+        // ============================================================
+        const sharedThree = (() => {
+            let renderer = null;
+            const viewers = [];
+            let loopStarted = false;
+            // Track last size pushed to the renderer to avoid redundant resizes
+            let rendererW = -1, rendererH = -1;
 
-        function initRobotViewer() {
-            const container = document.getElementById('robot-viewer');
-            if (!container) return;
-
-            // Skip robot viewer on mobile (section is hidden)
-            if (window.MOBILE_MODE) {
-                return;
+            function ensureRenderer() {
+                if (renderer) return;
+                renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true,
+                    preserveDrawingBuffer: true
+                });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.outputEncoding = THREE.sRGBEncoding;
+                // Canvas stays off-DOM; output is copied to per-viewer 2D canvases
             }
 
-            // Add loading indicator
-            container.innerHTML = '<div class="model-loading">LOADING ROBOT MODEL...</div>';
+            function addViewer(containerId, scene, camera, mixer, clock) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                ensureRenderer();
 
-            // Scene setup
-            scene = new THREE.Scene();
+                // 2D canvas appended to the container for display
+                const canvas2d = document.createElement('canvas');
+                canvas2d.style.cssText = 'display:block;width:100%;height:100%;';
+                container.appendChild(canvas2d);
+                const ctx2d = canvas2d.getContext('2d');
+
+                // OrbitControls binds to the 2D canvas (normal pointer-event handling)
+                const controls = new THREE.OrbitControls(camera, canvas2d);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.screenSpacePanning = false;
+                controls.minDistance = 1;
+                controls.maxDistance = 15;
+                controls.maxPolarAngle = Math.PI;
+
+                viewers.push({ containerId, canvas2d, ctx2d, scene, camera, controls, mixer, clock, lastW: 0, lastH: 0 });
+
+                if (!loopStarted) { loopStarted = true; loop(); }
+            }
+
+            function loop() {
+                requestAnimationFrame(loop);
+                if (!renderer) return;
+                const dpr = Math.min(window.devicePixelRatio, 2);
+
+                for (const v of viewers) {
+                    const container = document.getElementById(v.containerId);
+                    if (!container) continue;
+
+                    // Task 67: skip rendering when section is scrolled out of view
+                    const rect = container.getBoundingClientRect();
+                    if (rect.bottom < 0 || rect.top > window.innerHeight) continue;
+
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    if (w <= 0 || h <= 0) continue;
+
+                    // Resize display canvas and update camera only when dimensions change
+                    if (w !== v.lastW || h !== v.lastH) {
+                        v.lastW = w; v.lastH = h;
+                        v.canvas2d.width  = Math.round(w * dpr);
+                        v.canvas2d.height = Math.round(h * dpr);
+                        v.camera.aspect = w / h;
+                        v.camera.updateProjectionMatrix();
+                    }
+
+                    // Resize the shared WebGL render buffer only when switching to a
+                    // different size (avoids GPU buffer reallocations every frame)
+                    if (w !== rendererW || h !== rendererH) {
+                        rendererW = w; rendererH = h;
+                        renderer.setSize(w, h, false);
+                    }
+
+                    if (v.mixer && v.clock) v.mixer.update(v.clock.getDelta());
+                    v.controls.update();
+
+                    renderer.render(v.scene, v.camera);
+
+                    // Blit rendered frame into the viewer's visible 2D canvas
+                    v.ctx2d.clearRect(0, 0, v.canvas2d.width, v.canvas2d.height);
+                    v.ctx2d.drawImage(renderer.domElement, 0, 0, v.canvas2d.width, v.canvas2d.height);
+                }
+            }
+
+            return { addViewer };
+        })();
+
+        // ---- Model loader factory (replaces 5 near-identical init functions) ----
+        // Task 67: models are loaded lazily from initAnimations() via IntersectionObserver
+        function loadModelIntoViewer(containerId, modelPath, camPos) {
+            if (window.MOBILE_MODE) return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '<div class="model-loading">LOADING MODEL...</div>';
+
+            const scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf8f9ff);
 
-            // Camera setup
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(1.5, 1.5, 1.5);
+            const aspect = container.clientWidth / (container.clientHeight || 1);
+            const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+            camera.position.set(...camPos);
 
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(renderer.domElement);
-
-            // Controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 1;
-            controls.maxDistance = 15;
-            controls.maxPolarAngle = Math.PI;
-
-            // Lighting
             const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
             scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            scene.add(directionalLight);
-
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 10, 5);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
             const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
             pointLight.position.set(-5, 5, -5);
             scene.add(pointLight);
 
-            // Grid helper
-            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
-            gridHelper.material.opacity = 0.2;
-            gridHelper.material.transparent = true;
-            scene.add(gridHelper);
+            const grid = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            scene.add(grid);
 
-            // Load the GLB model
             const loader = new THREE.GLTFLoader();
             loader.load(
-                '{{ url_for("static", filename="models/Robot Playground.glb") }}',
-                function (gltf) {
-                    robotModel = gltf.scene;
-                    
-                    // Center and scale the model
-                    const box = new THREE.Box3().setFromObject(robotModel);
+                modelPath,
+                function(gltf) {
+                    const model = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
                     const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 4 / maxDim;
-                    
-                    robotModel.scale.setScalar(scale);
-                    robotModel.position.sub(center.multiplyScalar(scale));
-                    
-                    // Enable shadows
-                    robotModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
+                    const scale = 4 / Math.max(size.x, size.y, size.z);
+                    model.scale.setScalar(scale);
+                    model.position.sub(center.multiplyScalar(scale));
+                    model.traverse(child => {
+                        if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }
                     });
-                    
-                    scene.add(robotModel);
-                    
-                    // Setup animations if available
+                    scene.add(model);
+
+                    let mixer = null, clock = null;
                     if (gltf.animations && gltf.animations.length > 0) {
-                        mixer = new THREE.AnimationMixer(robotModel);
+                        mixer = new THREE.AnimationMixer(model);
                         clock = new THREE.Clock();
-                        
-                        gltf.animations.forEach((clip) => {
-                            mixer.clipAction(clip).play();
-                        });
+                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
                     }
-                    
-                    // Remove loading indicator
+
                     container.querySelector('.model-loading')?.remove();
-                    
-                    // Start animation loop
-                    animate();
+                    sharedThree.addViewer(containerId, scene, camera, mixer, clock);
                 },
-                function (xhr) {
-                    // Progress callback
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    const loadingElement = container.querySelector('.model-loading');
-                    if (loadingElement) {
-                        loadingElement.textContent = `LOADING ROBOT MODEL... ${Math.round(progress)}%`;
+                function(xhr) {
+                    if (xhr.total) {
+                        const el = container.querySelector('.model-loading');
+                        if (el) el.textContent = `LOADING MODEL... ${Math.round((xhr.loaded / xhr.total) * 100)}%`;
                     }
                 },
-                function (error) {
-                    console.error('Error loading model:', error);
+                function(error) {
+                    console.error(`Error loading model ${modelPath}:`, error);
                     container.innerHTML = '<div class="model-loading">ERROR LOADING MODEL</div>';
                 }
             );
-
-            // Handle window resize
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            if (mixer && clock) {
-                mixer.update(clock.getDelta());
-            }
-            
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        function onWindowResize() {
-            const container = document.getElementById('robot-viewer');
-            if (!container) return;
-            
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        // Three.js Sweeper Setup
-        let sweeperScene, sweeperCamera, sweeperRenderer, sweeperControls, sweeperMixer, sweeperClock;
-        let sweeperModel = null;
-
-        function initSweeperViewer() {
-            const container = document.getElementById('sweeper-viewer');
-            if (!container) return;
-
-            // Add loading indicator
-            container.innerHTML = '<div class="model-loading">LOADING SWEEPER MODEL...</div>';
-
-            // Scene setup
-            sweeperScene = new THREE.Scene();
-            sweeperScene.background = new THREE.Color(0xf8f9ff);
-
-            // Camera setup
-            sweeperCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            sweeperCamera.position.set(3, 3, 3);
-
-            // Renderer setup
-            sweeperRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            sweeperRenderer.setSize(container.clientWidth, container.clientHeight);
-            sweeperRenderer.setPixelRatio(window.devicePixelRatio);
-            sweeperRenderer.shadowMap.enabled = true;
-            sweeperRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            sweeperRenderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(sweeperRenderer.domElement);
-
-            // Controls
-            sweeperControls = new THREE.OrbitControls(sweeperCamera, sweeperRenderer.domElement);
-            sweeperControls.enableDamping = true;
-            sweeperControls.dampingFactor = 0.05;
-            sweeperControls.screenSpacePanning = false;
-            sweeperControls.minDistance = 1;
-            sweeperControls.maxDistance = 15;
-            sweeperControls.maxPolarAngle = Math.PI;
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            sweeperScene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            sweeperScene.add(directionalLight);
-
-            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
-            pointLight.position.set(-5, 5, -5);
-            sweeperScene.add(pointLight);
-
-            // Grid helper
-            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
-            gridHelper.material.opacity = 0.2;
-            gridHelper.material.transparent = true;
-            sweeperScene.add(gridHelper);
-
-            // Load the GLB model
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                '{{ url_for("static", filename="models/Autonomous Robot Sweeper.glb") }}',
-                function (gltf) {
-                    sweeperModel = gltf.scene;
-                    
-                    // Center and scale the model
-                    const box = new THREE.Box3().setFromObject(sweeperModel);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 4 / maxDim;
-                    
-                    sweeperModel.scale.setScalar(scale);
-                    sweeperModel.position.sub(center.multiplyScalar(scale));
-                    
-                    // Enable shadows
-                    sweeperModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-                    
-                    sweeperScene.add(sweeperModel);
-                    
-                    // Setup animations if available
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        sweeperMixer = new THREE.AnimationMixer(sweeperModel);
-                        sweeperClock = new THREE.Clock();
-                        
-                        gltf.animations.forEach((clip) => {
-                            sweeperMixer.clipAction(clip).play();
-                        });
-                    }
-                    
-                    // Remove loading indicator
-                    container.querySelector('.model-loading')?.remove();
-                    
-                    // Start animation loop
-                    animateSweeper();
-                },
-                function (xhr) {
-                    // Progress callback
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    const loadingElement = container.querySelector('.model-loading');
-                    if (loadingElement) {
-                        loadingElement.textContent = `LOADING SWEEPER MODEL... ${Math.round(progress)}%`;
-                    }
-                },
-                function (error) {
-                    console.error('Error loading sweeper model:', error);
-                    container.innerHTML = '<div class="model-loading">ERROR LOADING SWEEPER MODEL</div>';
-                }
-            );
-
-            // Handle window resize
-            window.addEventListener('resize', onSweeperWindowResize);
-        }
-
-        function animateSweeper() {
-            requestAnimationFrame(animateSweeper);
-            
-            if (sweeperMixer && sweeperClock) {
-                sweeperMixer.update(sweeperClock.getDelta());
-            }
-            
-            sweeperControls.update();
-            sweeperRenderer.render(sweeperScene, sweeperCamera);
-        }
-
-        function onSweeperWindowResize() {
-            const container = document.getElementById('sweeper-viewer');
-            if (!container) return;
-            
-            sweeperCamera.aspect = container.clientWidth / container.clientHeight;
-            sweeperCamera.updateProjectionMatrix();
-            sweeperRenderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        // Mini Robot Setup
-        let miniScene, miniCamera, miniRenderer, miniControls, miniMixer, miniClock;
-        let miniModel = null;
-
-        function initMiniRobotViewer() {
-            const container = document.getElementById('mini-robot-viewer');
-            if (!container) return;
-
-            // Skip 3D rendering on mobile
-            if (window.MOBILE_MODE) {
-                const placeholder = container.querySelector('.mobile-placeholder');
-                if (placeholder) {
-                    placeholder.style.display = 'block';
-                }
-                return;
-            }
-
-            container.innerHTML = '<div class="model-loading">LOADING MINI ROBOT MODEL...</div>';
-
-            miniScene = new THREE.Scene();
-            miniScene.background = new THREE.Color(0xf8f9ff);
-
-            miniCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            miniCamera.position.set(2, 2, 2);
-
-            miniRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            miniRenderer.setSize(container.clientWidth, container.clientHeight);
-            miniRenderer.setPixelRatio(window.devicePixelRatio);
-            miniRenderer.shadowMap.enabled = true;
-            miniRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            miniRenderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(miniRenderer.domElement);
-
-            miniControls = new THREE.OrbitControls(miniCamera, miniRenderer.domElement);
-            miniControls.enableDamping = true;
-            miniControls.dampingFactor = 0.05;
-            miniControls.screenSpacePanning = false;
-            miniControls.minDistance = 1;
-            miniControls.maxDistance = 15;
-            miniControls.maxPolarAngle = Math.PI;
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            miniScene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            miniScene.add(directionalLight);
-
-            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
-            pointLight.position.set(-5, 5, -5);
-            miniScene.add(pointLight);
-
-            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
-            gridHelper.material.opacity = 0.2;
-            gridHelper.material.transparent = true;
-            miniScene.add(gridHelper);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                '{{ url_for("static", filename="models/Mini_Robot_webp.glb") }}',
-                function (gltf) {
-                    miniModel = gltf.scene;
-                    
-                    const box = new THREE.Box3().setFromObject(miniModel);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 4 / maxDim;
-                    
-                    miniModel.scale.setScalar(scale);
-                    miniModel.position.sub(center.multiplyScalar(scale));
-                    
-                    miniModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-                    
-                    miniScene.add(miniModel);
-                    
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        miniMixer = new THREE.AnimationMixer(miniModel);
-                        miniClock = new THREE.Clock();
-                        
-                        gltf.animations.forEach((clip) => {
-                            miniMixer.clipAction(clip).play();
-                        });
-                    }
-                    
-                    container.querySelector('.model-loading')?.remove();
-                    animateMini();
-                },
-                function (xhr) {
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    const loadingElement = container.querySelector('.model-loading');
-                    if (loadingElement) {
-                        loadingElement.textContent = `LOADING MINI ROBOT MODEL... ${Math.round(progress)}%`;
-                    }
-                },
-                function (error) {
-                    console.error('Error loading mini robot model:', error);
-                    container.innerHTML = '<div class="model-loading">ERROR LOADING MINI ROBOT MODEL</div>';
-                }
-            );
-
-            window.addEventListener('resize', onMiniWindowResize);
-        }
-
-        function animateMini() {
-            requestAnimationFrame(animateMini);
-            
-            if (miniMixer && miniClock) {
-                miniMixer.update(miniClock.getDelta());
-            }
-            
-            miniControls.update();
-            miniRenderer.render(miniScene, miniCamera);
-        }
-
-        function onMiniWindowResize() {
-            const container = document.getElementById('mini-robot-viewer');
-            if (!container) return;
-            
-            miniCamera.aspect = container.clientWidth / container.clientHeight;
-            miniCamera.updateProjectionMatrix();
-            miniRenderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        // Cute Home Robot Setup
-        let cuteScene, cuteCamera, cuteRenderer, cuteControls, cuteMixer, cuteClock;
-        let cuteModel = null;
-
-        function initCuteRobotViewer() {
-            const container = document.getElementById('cute-robot-viewer');
-            if (!container) return;
-
-            container.innerHTML = '<div class="model-loading">LOADING CUTE ROBOT MODEL...</div>';
-
-            cuteScene = new THREE.Scene();
-            cuteScene.background = new THREE.Color(0xf8f9ff);
-
-            cuteCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            cuteCamera.position.set(2, 2, 2);
-
-            cuteRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            cuteRenderer.setSize(container.clientWidth, container.clientHeight);
-            cuteRenderer.setPixelRatio(window.devicePixelRatio);
-            cuteRenderer.shadowMap.enabled = true;
-            cuteRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            cuteRenderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(cuteRenderer.domElement);
-
-            cuteControls = new THREE.OrbitControls(cuteCamera, cuteRenderer.domElement);
-            cuteControls.enableDamping = true;
-            cuteControls.dampingFactor = 0.05;
-            cuteControls.screenSpacePanning = false;
-            cuteControls.minDistance = 1;
-            cuteControls.maxDistance = 15;
-            cuteControls.maxPolarAngle = Math.PI;
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            cuteScene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            cuteScene.add(directionalLight);
-
-            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
-            pointLight.position.set(-5, 5, -5);
-            cuteScene.add(pointLight);
-
-            // Add a custom ground plane with brown color
-            const groundGeometry = new THREE.PlaneGeometry(20, 20);
-            const groundMaterial = new THREE.MeshLambertMaterial({ 
-                color: 0x8B4513,  // Brown color to match the base
-                transparent: true,
-                opacity: 0.8
-            });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            ground.position.y = -2;
-            ground.receiveShadow = true;
-            cuteScene.add(ground);
-
-            const gridHelper = new THREE.GridHelper(10, 10, 0x8B4513, 0x8B4513); // Brown color
-            gridHelper.material.opacity = 0.3;
-            gridHelper.material.transparent = true;
-            cuteScene.add(gridHelper);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                '{{ url_for("static", filename="models/Cute Home Robot.glb") }}',
-                function (gltf) {
-                    cuteModel = gltf.scene;
-                    
-                    const box = new THREE.Box3().setFromObject(cuteModel);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 4 / maxDim;
-                    
-                    cuteModel.scale.setScalar(scale);
-                    cuteModel.position.sub(center.multiplyScalar(scale));
-                    
-                    cuteModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            
-                            // Hide brown/ground parts of the model
-                            if (child.material && child.material.color) {
-                                const color = child.material.color;
-                                // Check if the material is brown-ish
-                                if (color.r > 0.4 && color.g > 0.2 && color.g < 0.4 && color.b < 0.3) {
-                                    child.visible = false;
-                                }
-                            }
-                        }
-                    });
-                    
-                    cuteScene.add(cuteModel);
-                    
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        cuteMixer = new THREE.AnimationMixer(cuteModel);
-                        cuteClock = new THREE.Clock();
-                        
-                        gltf.animations.forEach((clip) => {
-                            cuteMixer.clipAction(clip).play();
-                        });
-                    }
-                    
-                    container.querySelector('.model-loading')?.remove();
-                    animateCute();
-                },
-                function (xhr) {
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    const loadingElement = container.querySelector('.model-loading');
-                    if (loadingElement) {
-                        loadingElement.textContent = `LOADING CUTE ROBOT MODEL... ${Math.round(progress)}%`;
-                    }
-                },
-                function (error) {
-                    console.error('Error loading cute robot model:', error);
-                    container.innerHTML = '<div class="model-loading">ERROR LOADING CUTE ROBOT MODEL</div>';
-                }
-            );
-
-            window.addEventListener('resize', onCuteWindowResize);
-        }
-
-        function animateCute() {
-            requestAnimationFrame(animateCute);
-            
-            if (cuteMixer && cuteClock) {
-                cuteMixer.update(cuteClock.getDelta());
-            }
-            
-            cuteControls.update();
-            cuteRenderer.render(cuteScene, cuteCamera);
-        }
-
-        function onCuteWindowResize() {
-            const container = document.getElementById('cute-robot-viewer');
-            if (!container) return;
-            
-            cuteCamera.aspect = container.clientWidth / container.clientHeight;
-            cuteCamera.updateProjectionMatrix();
-            cuteRenderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        // Small Robot Setup
-        let smallScene, smallCamera, smallRenderer, smallControls, smallMixer, smallClock;
-        let smallModel = null;
-
-        function initSmallRobotViewer() {
-            const container = document.getElementById('small-robot-viewer');
-            if (!container) return;
-
-            // Skip 3D rendering on mobile
-            if (window.MOBILE_MODE) {
-                const placeholder = container.querySelector('.mobile-placeholder');
-                if (placeholder) {
-                    placeholder.style.display = 'block';
-                }
-                return;
-            }
-
-            container.innerHTML = '<div class="model-loading">LOADING SMALL ROBOT MODEL...</div>';
-
-            smallScene = new THREE.Scene();
-            smallScene.background = new THREE.Color(0xf8f9ff);
-
-            smallCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            smallCamera.position.set(2, 2, 2);
-
-            smallRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            smallRenderer.setSize(container.clientWidth, container.clientHeight);
-            smallRenderer.setPixelRatio(window.devicePixelRatio);
-            smallRenderer.shadowMap.enabled = true;
-            smallRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            smallRenderer.outputEncoding = THREE.sRGBEncoding;
-            container.appendChild(smallRenderer.domElement);
-
-            smallControls = new THREE.OrbitControls(smallCamera, smallRenderer.domElement);
-            smallControls.enableDamping = true;
-            smallControls.dampingFactor = 0.05;
-            smallControls.screenSpacePanning = false;
-            smallControls.minDistance = 1;
-            smallControls.maxDistance = 15;
-            smallControls.maxPolarAngle = Math.PI;
-
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            smallScene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            smallScene.add(directionalLight);
-
-            const pointLight = new THREE.PointLight(0x0066ff, 0.5, 100);
-            pointLight.position.set(-5, 5, -5);
-            smallScene.add(pointLight);
-
-            const gridHelper = new THREE.GridHelper(10, 10, 0x0000ff, 0x0000ff);
-            gridHelper.material.opacity = 0.2;
-            gridHelper.material.transparent = true;
-            smallScene.add(gridHelper);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                '{{ url_for("static", filename="models/Small Robot.glb") }}',
-                function (gltf) {
-                    smallModel = gltf.scene;
-                    
-                    const box = new THREE.Box3().setFromObject(smallModel);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 4 / maxDim;
-                    
-                    smallModel.scale.setScalar(scale);
-                    smallModel.position.sub(center.multiplyScalar(scale));
-                    
-                    smallModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-                    
-                    smallScene.add(smallModel);
-                    
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        smallMixer = new THREE.AnimationMixer(smallModel);
-                        smallClock = new THREE.Clock();
-                        
-                        gltf.animations.forEach((clip) => {
-                            smallMixer.clipAction(clip).play();
-                        });
-                    }
-                    
-                    container.querySelector('.model-loading')?.remove();
-                    animateSmall();
-                },
-                function (xhr) {
-                    const progress = (xhr.loaded / xhr.total) * 100;
-                    const loadingElement = container.querySelector('.model-loading');
-                    if (loadingElement) {
-                        loadingElement.textContent = `LOADING SMALL ROBOT MODEL... ${Math.round(progress)}%`;
-                    }
-                },
-                function (error) {
-                    console.error('Error loading small robot model:', error);
-                    container.innerHTML = '<div class="model-loading">ERROR LOADING SMALL ROBOT MODEL</div>';
-                }
-            );
-
-            window.addEventListener('resize', onSmallWindowResize);
-        }
-
-        function animateSmall() {
-            requestAnimationFrame(animateSmall);
-            
-            if (smallMixer && smallClock) {
-                smallMixer.update(smallClock.getDelta());
-            }
-            
-            smallControls.update();
-            smallRenderer.render(smallScene, smallCamera);
-        }
-
-        function onSmallWindowResize() {
-            const container = document.getElementById('small-robot-viewer');
-            if (!container) return;
-            
-            smallCamera.aspect = container.clientWidth / container.clientHeight;
-            smallCamera.updateProjectionMatrix();
-            smallRenderer.setSize(container.clientWidth, container.clientHeight);
         }
 
         // Python Code Animation
@@ -1241,6 +720,9 @@ Program completed successfully!`;
             }
 
             // A* Algorithm Visualization
+            // Task 68: all setTimeout handles are stored in astarTimeouts so they can
+            // be cleared on reset, preventing stale callbacks from an earlier run
+            // firing after a new cycle has already started.
             let astarCanvas, astarCtx;
             let astarNodes = [];
             let astarEdges = [];
@@ -1252,17 +734,22 @@ Program completed successfully!`;
             let astarCameFrom = {};
             let astarGScore = {};
             let astarFScore = {};
-            let astarCurrentNode = null; // Track the node currently being explored
-            let astarConsideredNodes = []; // Track nodes being considered but not chosen
-            let astarNewNodes = []; // Track newly added nodes for consideration
+            let astarCurrentNode = null;
+            let astarConsideredNodes = [];
+            let astarNewNodes = [];
+            let astarTimeouts = [];
+
+            function clearAStarTimeouts() {
+                astarTimeouts.forEach(t => clearTimeout(t));
+                astarTimeouts = [];
+            }
 
             function initAStarVisualization() {
                 astarCanvas = document.getElementById('astar-canvas');
                 if (!astarCanvas) return;
-                
+
                 astarCtx = astarCanvas.getContext('2d');
-                
-                // Define graph structure
+
                 astarNodes = [
                     { id: 'A', x: 100, y: 125, label: 'A', isStart: true },
                     { id: 'B', x: 200, y: 60, label: 'B' },
@@ -1271,7 +758,7 @@ Program completed successfully!`;
                     { id: 'E', x: 300, y: 190, label: 'E' },
                     { id: 'F', x: 400, y: 125, label: 'F', isGoal: true }
                 ];
-                
+
                 astarEdges = [
                     { from: 'A', to: 'B', cost: 2 },
                     { from: 'A', to: 'C', cost: 3 },
@@ -1282,8 +769,7 @@ Program completed successfully!`;
                     { from: 'D', to: 'F', cost: 2 },
                     { from: 'E', to: 'F', cost: 3 }
                 ];
-                
-                // Initialize A* data structures
+
                 astarOpenSet = ['A'];
                 astarClosedSet = [];
                 astarCameFrom = {};
@@ -1291,19 +777,14 @@ Program completed successfully!`;
                 astarFScore = { 'A': heuristic('A', 'F') };
                 astarPath = [];
                 astarCurrentStep = 0;
-                
-                // Add event listeners
+
                 document.getElementById('reset-astar').addEventListener('click', resetAStar);
-                
-                // Initial draw
+
                 drawAStarGraph();
                 updateAStarStatus('Algorithm will start automatically...');
                 updateCalculationsPanel();
-                
-                // Auto-start after a short delay
-                setTimeout(() => {
-                    startAStar();
-                }, 1000);
+
+                astarTimeouts.push(setTimeout(() => { startAStar(); }, 1000));
             }
 
             function heuristic(node, goal) {
@@ -1449,10 +930,9 @@ Program completed successfully!`;
             }
 
             function startAStar() {
-                if (astarAnimationId) {
-                    cancelAnimationFrame(astarAnimationId);
-                }
-                
+                clearAStarTimeouts();
+                if (astarAnimationId) { cancelAnimationFrame(astarAnimationId); }
+
                 astarCurrentStep = 0;
                 astarPath = [];
                 astarOpenSet = ['A'];
@@ -1461,7 +941,7 @@ Program completed successfully!`;
                 astarGScore = { 'A': 0 };
                 astarFScore = { 'A': heuristic('A', 'F') };
                 astarCurrentNode = null;
-                
+
                 updateAStarStatus('Starting A* algorithm...');
                 astarStep();
             }
@@ -1471,105 +951,77 @@ Program completed successfully!`;
                     updateAStarStatus('No path found!');
                     return;
                 }
-                
-                // Show consideration of newly added nodes
+
                 astarConsideredNodes = [...astarNewNodes];
                 drawAStarGraph();
-                
-                // Wait a moment to show all candidates being considered
-                setTimeout(() => {
-                    // Get current node (lowest f_score)
-                    const current = astarOpenSet.reduce((lowest, node) => 
+
+                astarTimeouts.push(setTimeout(() => {
+                    const current = astarOpenSet.reduce((lowest, node) =>
                         astarFScore[node] < astarFScore[lowest] ? node : lowest
                     , astarOpenSet[0]);
-                    
-                    // Clear considered nodes and set the current node being explored
+
                     astarConsideredNodes = [];
-                    astarNewNodes = []; // Clear new nodes array
+                    astarNewNodes = [];
                     astarCurrentNode = current;
-                
-                if (current === 'F') {
-                    // Reconstruct path
-                    astarPath = ['F'];
-                    let node = 'F';
-                    while (astarCameFrom[node]) {
-                        node = astarCameFrom[node];
-                        astarPath.unshift(node);
-                    }
-                    
-                    updateAStarStatus(`Path found! Cost: ${astarGScore['F']}`);
-                    astarCurrentNode = null; // Clear current node when done
-                    drawAStarGraph();
-                    
-                    // Auto-restart after 2 seconds
-                    setTimeout(() => {
-                        resetAStar();
-                    }, 2000);
-                    return;
-                }
-                
-                // Update status
-                updateAStarStatus(`Exploring node ${current} (f=${astarFScore[current].toFixed(2)})`);
-                
-                // Draw the current state (current node in pink)
-                drawAStarGraph();
-                
-                // Wait a moment to show the current node being explored, then move to closed set
-                setTimeout(() => {
-                    // Move current from open to closed set
-                    astarOpenSet = astarOpenSet.filter(n => n !== current);
-                    astarClosedSet.push(current);
-                    
-                    // Keep current node pink for a bit longer to show it was explored
-                    setTimeout(() => {
-                        astarCurrentNode = null;
-                    }, 300);
-                    
-                    // Check neighbors
-                    const neighbors = astarEdges
-                        .filter(edge => edge.from === current)
-                        .map(edge => ({ to: edge.to, cost: edge.cost }));
-                    
-                    neighbors.forEach(({ to: neighbor, cost }) => {
-                        if (astarClosedSet.includes(neighbor)) return;
-                        
-                        const tentativeG = astarGScore[current] + cost;
-                        
-                        if (!astarOpenSet.includes(neighbor)) {
-                            astarOpenSet.push(neighbor);
-                            astarNewNodes.push(neighbor); // Track newly added nodes
-                            // Initialize scores for new nodes
-                            astarGScore[neighbor] = tentativeG;
-                            astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
-                        } else if (tentativeG >= astarGScore[neighbor]) {
-                            return;
-                        } else {
-                            // Update scores for existing nodes with better path
-                            astarGScore[neighbor] = tentativeG;
-                            astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
+
+                    if (current === 'F') {
+                        astarPath = ['F'];
+                        let node = 'F';
+                        while (astarCameFrom[node]) {
+                            node = astarCameFrom[node];
+                            astarPath.unshift(node);
                         }
-                        
-                        // Update the path
-                        astarCameFrom[neighbor] = current;
-                    });
-                    
+                        updateAStarStatus(`Path found! Cost: ${astarGScore['F']}`);
+                        astarCurrentNode = null;
+                        drawAStarGraph();
+                        // Auto-restart; handle stored so resetAStar can cancel it
+                        astarTimeouts.push(setTimeout(() => { resetAStar(); }, 2000));
+                        return;
+                    }
+
+                    updateAStarStatus(`Exploring node ${current} (f=${astarFScore[current].toFixed(2)})`);
                     drawAStarGraph();
-                    
-                    // Continue after delay
-                    setTimeout(() => {
-                        astarAnimationId = requestAnimationFrame(astarStep);
-                    }, 1000);
-                }, 500);
-                }, 800); // Close the consideration setTimeout - longer to show consideration phase
-                
-                return; // Exit early since we're handling the continuation in setTimeout
+
+                    astarTimeouts.push(setTimeout(() => {
+                        astarOpenSet = astarOpenSet.filter(n => n !== current);
+                        astarClosedSet.push(current);
+
+                        astarTimeouts.push(setTimeout(() => { astarCurrentNode = null; }, 300));
+
+                        const neighbors = astarEdges
+                            .filter(edge => edge.from === current)
+                            .map(edge => ({ to: edge.to, cost: edge.cost }));
+
+                        neighbors.forEach(({ to: neighbor, cost }) => {
+                            if (astarClosedSet.includes(neighbor)) return;
+                            const tentativeG = astarGScore[current] + cost;
+                            if (!astarOpenSet.includes(neighbor)) {
+                                astarOpenSet.push(neighbor);
+                                astarNewNodes.push(neighbor);
+                                astarGScore[neighbor] = tentativeG;
+                                astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
+                            } else if (tentativeG < astarGScore[neighbor]) {
+                                astarGScore[neighbor] = tentativeG;
+                                astarFScore[neighbor] = tentativeG + heuristic(neighbor, 'F');
+                            } else {
+                                return;
+                            }
+                            astarCameFrom[neighbor] = current;
+                        });
+
+                        drawAStarGraph();
+
+                        astarTimeouts.push(setTimeout(() => {
+                            astarAnimationId = requestAnimationFrame(astarStep);
+                        }, 1000));
+                    }, 500));
+                }, 800));
             }
 
             function resetAStar() {
-                if (astarAnimationId) {
-                    cancelAnimationFrame(astarAnimationId);
-                }
-                
+                clearAStarTimeouts();
+                if (astarAnimationId) { cancelAnimationFrame(astarAnimationId); }
+
                 astarOpenSet = ['A'];
                 astarClosedSet = [];
                 astarCameFrom = {};
@@ -1579,15 +1031,20 @@ Program completed successfully!`;
                 astarCurrentNode = null;
                 astarConsideredNodes = [];
                 astarNewNodes = [];
-                
+
                 drawAStarGraph();
                 updateAStarStatus('Algorithm will start automatically...');
-                
-                // Auto-start after a short delay
-                setTimeout(() => {
-                    startAStar();
-                }, 1000);
+                astarTimeouts.push(setTimeout(() => { startAStar(); }, 1000));
             }
+
+        // ---- Model viewer config — one entry per HTML container ----
+        // Task 67: models are never fetched eagerly; loadModelIntoViewer() is
+        // called only when the section enters the viewport via IntersectionObserver.
+        const MODEL_VIEWER_CONFIGS = {
+            'robot-viewer':       { path: '{{ url_for("static", filename="models/Robot Playground.glb") }}',  cam: [1.5, 1.5, 1.5] },
+            'mini-robot-viewer':  { path: '{{ url_for("static", filename="models/Mini_Robot_webp.glb") }}',   cam: [2, 2, 2] },
+            'small-robot-viewer': { path: '{{ url_for("static", filename="models/Small Robot.glb") }}',       cam: [2, 2, 2] }
+        };
 
         // Intersection Observer for animations
         function initAnimations() {
@@ -1598,58 +1055,36 @@ Program completed successfully!`;
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-in');
-                        
-                        // Initialize 3D viewer when model section comes into view
-                        if (entry.target.classList.contains('model-section')) {
-                            // Skip hidden sections on mobile
-                            if (window.MOBILE_MODE && entry.target.classList.contains('mobile-hidden')) {
-                                return;
+                    if (!entry.isIntersecting) return;
+                    entry.target.classList.add('animate-in');
+
+                    // Lazy-load 3D model when its section enters the viewport
+                    if (entry.target.classList.contains('model-section')) {
+                        if (window.MOBILE_MODE && entry.target.classList.contains('mobile-hidden')) return;
+                        if (entry.target.dataset.viewerInited) return;
+
+                        for (const [id, cfg] of Object.entries(MODEL_VIEWER_CONFIGS)) {
+                            if (entry.target.querySelector('#' + id)) {
+                                entry.target.dataset.viewerInited = '1';
+                                observer.unobserve(entry.target);
+                                setTimeout(() => loadModelIntoViewer(id, cfg.path, cfg.cam), 500);
+                                break;
                             }
-                            
-                            setTimeout(() => {
-                                // Check which robot viewer to initialize
-                                if (entry.target.querySelector('#sweeper-viewer')) {
-                                    initSweeperViewer();
-                                } else if (entry.target.querySelector('#mini-robot-viewer')) {
-                                    initMiniRobotViewer();
-                                } else if (entry.target.querySelector('#cute-robot-viewer')) {
-                                    initCuteRobotViewer();
-                                } else if (entry.target.querySelector('#small-robot-viewer')) {
-                                    initSmallRobotViewer();
-                                } else {
-                                    initRobotViewer();
-                                }
-                            }, window.MOBILE_MODE ? 100 : 500);
                         }
-                        
-                        // Initialize Python code animation when code section comes into view
-                        if (entry.target.classList.contains('code-section') && !animationRunning) {
-                            // Skip code animation on mobile
-                            if (window.MOBILE_MODE) {
-                                return;
-                            }
-                            setTimeout(() => {
-                                initPythonCodeAnimation();
-                            }, 500);
-                        }
-                        
-                        // Initialize A* algorithm visualization when A* section comes into view
-                        if (entry.target.querySelector('#astar-canvas')) {
-                            // Skip A* on mobile
-                            if (window.MOBILE_MODE) {
-                                return;
-                            }
-                            setTimeout(() => {
-                                initAStarVisualization();
-                            }, 500);
-                        }
+                    }
+
+                    if (entry.target.classList.contains('code-section') && !animationRunning) {
+                        if (window.MOBILE_MODE) return;
+                        setTimeout(() => { initPythonCodeAnimation(); }, 500);
+                    }
+
+                    if (entry.target.querySelector('#astar-canvas')) {
+                        if (window.MOBILE_MODE) return;
+                        setTimeout(() => { initAStarVisualization(); }, 500);
                     }
                 });
             }, observerOptions);
 
-            // Observe all blueprint sections
             document.querySelectorAll('.blueprint-section').forEach(section => {
                 observer.observe(section);
             });
@@ -1657,12 +1092,17 @@ Program completed successfully!`;
 
 
 
-        // Error handling to prevent infinite reloads
+        // Task 68: clear all pending A* timeouts when navigating away so stale
+        // callbacks don't fire on the next page load in browser history navigation.
+        window.addEventListener('pagehide', () => {
+            clearAStarTimeouts();
+            clearAllTimeouts();
+        });
+
         window.addEventListener('error', function(e) {
             console.error('JavaScript error:', e.error);
         });
 
-        // Disable heavy WebGL features when the browser loses the context (e.g. GPU memory pressure)
         document.addEventListener('webglcontextlost', function(e) {
             e.preventDefault();
             console.log('WebGL context lost, disabling heavy features');
